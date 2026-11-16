@@ -1,5 +1,17 @@
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; overscroll-behavior: none; }
+/* iOS 26 home-screen app (WebKit bug 301108): while the page is shorter than the screen, iOS
+   gives it a box 62 pt short (innerHeight and 100dvh 812 of 874) and draws nothing below it —
+   Alexey's cut-off list, 17.11. A page as tall as the screen gets the whole screen. The height
+   sits on <html>: on <body> it held on the home screen but not inside a project (measured).
+   Rule as in frappe-ui PR 1284; capped by 100lvh so it never makes the page scroll. */
+@media (display-mode: standalone) {
+  html { min-height: min(100lvh, calc(100% + env(safe-area-inset-top))); }
+}
+/* Bottom bar and «+» sit where iOS 26's own tab bar does: Watch app on the iPhone 17 Pro
+   simulator, bar bottom 22 pt above the screen edge (34 pt home-indicator zone − 12).
+   Alexey, 17.11: «меню надо тоже опустить». 8 pt on phones without a home indicator. */
+:root { --bar-bottom: max(8px, calc(env(safe-area-inset-bottom) - 12px)); }
 body {
   background: var(--bg); color: var(--ink); font: 400 var(--t-body)/1.35 var(--font);
   -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%;
@@ -75,7 +87,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 /* ---------- tab bar + plus ---------- */
 .tabbar {
   position: fixed; z-index: 40; left: var(--pad); right: calc(var(--pad) + 68px);
-  bottom: calc(env(safe-area-inset-bottom) + 8px); height: 62px; border-radius: 31px;
+  bottom: var(--bar-bottom); height: 62px; border-radius: 31px;
   display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; transition: transform .3s var(--ease-sheet), opacity .3s;
 }
 .tabbar button {
@@ -89,7 +101,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   background: var(--red); color: #fff; font-size: 11px; line-height: 17px; text-align: center;
 }
 .fab {
-  position: fixed; z-index: 41; right: var(--pad); bottom: calc(env(safe-area-inset-bottom) + 8px);
+  position: fixed; z-index: 41; right: var(--pad); bottom: var(--bar-bottom);
   width: 62px; height: 62px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 8px 22px color-mix(in srgb, var(--accent) 40%, transparent);
   transition: transform .15s, bottom .3s var(--ease-sheet);
@@ -273,7 +285,7 @@ button.row:active, .row.tap:active { background: var(--press); }
 /* composer, like Messages */
 .composer {
   position: absolute; z-index: 30; left: 0; right: 0; bottom: 0;
-  padding: 8px 12px calc(env(safe-area-inset-bottom) + 8px); display: flex; align-items: flex-end; gap: 8px;
+  padding: 8px 12px var(--bar-bottom); display: flex; align-items: flex-end; gap: 8px;
 }
 .composer::before {
   content: ""; position: absolute; inset: -24px 0 0; z-index: -1; pointer-events: none;
@@ -366,7 +378,7 @@ button.row:active, .row.tap:active { background: var(--press); }
 
 /* undo bar (Light Plan) */
 .undo {
-  position: fixed; z-index: 90; left: var(--pad); right: var(--pad); bottom: calc(env(safe-area-inset-bottom) + 84px);
+  position: fixed; z-index: 90; left: var(--pad); right: var(--pad); bottom: calc(var(--bar-bottom) + 76px);
   height: 52px; border-radius: 26px; display: flex; align-items: center; padding: 0 8px 0 20px; gap: 10px;
   transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform .3s var(--ease-sheet), opacity .2s;
   background: var(--sheet-glass);

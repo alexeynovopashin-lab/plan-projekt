@@ -80,7 +80,9 @@ export function mdToEntry(md) {
 
 // ---- registry projects.yml (only the shape we write) ----
 export function registryToYml(reg) {
-  const out = ["contract: " + (reg.contract || 1), "projects:"];
+  const out = ["contract: " + (reg.contract || 1)];
+  if (reg.last_event) out.push("last_event: " + reg.last_event);   // newest phone `project` event the Mac folded in
+  out.push("projects:");
   for (const p of reg.projects) {
     out.push("  - tag: " + p.tag);
     out.push("    title: " + yamlScalar(p.title));
@@ -100,6 +102,7 @@ export function ymlToRegistry(text) {
     const line = raw.replace(/\s+#.*$/, "");
     let m;
     if ((m = /^contract:\s*(\d+)/.exec(line))) reg.contract = +m[1];
+    else if ((m = /^last_event:\s*(\S+)/.exec(line))) reg.last_event = m[1];
     else if ((m = /^\s*-\s+tag:\s*(\S+)/.exec(line))) { cur = { tag: m[1], aliases: [] }; reg.projects.push(cur); }
     else if (cur && (m = /^\s+(\w+):\s*(.*)$/.exec(line))) {
       const k = m[1], v = m[2].trim();

@@ -1,0 +1,124 @@
+// Outbox to the private entries repo on GitHub. Alexey, 16.11: «Научить бету отправлять напрямую
+// в GitHub плюс сделать pp на Mac» (DECISIONS.md). docs/architecture.md §2: save locally first,
+// send when the app is open and online; every file is a «create», and a file that is already
+// there counts as delivered, so a repeat never breaks anything. Order: pictures, entry, events.
+// projects.yml is written only by the Mac (data_contract §5): the phone reads it, never sends it.
+import { allFiles, writeRegistry, load, done } from "./store.js";
+import { ymlToRegistry } from "./contract.js";
+
+const K = { repo: "pp.gh.repo", token: "pp.gh.token", sent: "pp.gh.sent", last: "pp.gh.last", armed: "pp.gh.armed", api: "pp.gh.api" };
+function get(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
+
+export const DEFAULT_REPO = "alexeynovopashin-lab/planprojekt-entries";
+export const config = () => ({ repo: get(K.repo) || "", token: get(K.token) || "" });
+export function saveConfig({ repo, token }) {
+  if (repo !== undefined) set(K.repo, repo.trim() || null);
+  if (token !== undefined) set(K.token, token.trim() || null);
+  emit();
+}
+export function forgetKey() { set(K.token, null); set(K.armed, null); emit(); }
+// The first real write waits for his own tap on «Отправить сейчас» (agreed with Alexey, 16.11).
+export const armed = () => get(K.armed) === "1";
+export const lastRun = () => { try { return JSON.parse(get(K.last) || "null"); } catch { return null; } };
+
+const listeners = new Set();
+export function onSync(fn) { listeners.add(fn); return () => listeners.delete(fn); }
+function emit() { for (const fn of listeners) fn(); }
+
+// Delivered paths, per repo: a new repo starts from zero.
+function sentSet() {
+  try { const s = JSON.parse(get(K.sent) || "null"); if (s && s.repo === config().repo) return new Set(s.paths); } catch {}
+  return new Set();
+}
+function saveSent(set_) { set(K.sent, JSON.stringify({ repo: config().repo, paths: [...set_] })); }
+
+const RANK = p => (p.startsWith("attachments/") ? 0 : p.startsWith("entries/") ? 1 : 2);
+export async function pendingFiles() {
+  const sent = sentSet();
+  return (await allFiles())
+    .filter(f => f.path !== "projects.yml" && !sent.has(f.path))
+    .sort((a, b) => RANK(a.path) - RANK(b.path) || (a.path < b.path ? -1 : 1));
+}
+
+async function b64(body) {
+  const bytes = typeof body === "string" ? new TextEncoder().encode(body) : new Uint8Array(await body.arrayBuffer());
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+async function api(method, path, { body, raw = false } = {}) {
+  const { repo, token } = config();
+  const base = get(K.api) || "https://api.github.com";   // pp.gh.api: a local fake for agents' checks
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 20000);
+  try {
+    return await fetch(`${base}/repos/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}`, {
+      method, signal: ctl.signal,
+      headers: {
+        Authorization: "Bearer " + token,
+        Accept: raw ? "application/vnd.github.raw" : "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        ...(body ? { "Content-Type": "application/json" } : {})
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+  } finally { clearTimeout(t); }
+}
+
+const WHY = {
+  401: "GitHub не принял ключ — возможно, он истёк или вставлен не целиком",
+  403: "у ключа нет права записи в этот репозиторий",
+  404: "репозиторий не найден — проверьте имя или доступ ключа к нему"
+};
+
+let running = null;
+export const busy = () => !!running;
+
+// manual: his tap on «Отправить сейчас». Otherwise runs on open / return to the app / back online.
+export function syncNow({ manual = false } = {}) {
+  const { repo, token } = config();
+  if (!repo || !token) return Promise.resolve({ skipped: "no-key" });
+  if (!manual && !armed()) return Promise.resolve({ skipped: "not-armed" });
+  if (!navigator.onLine) return Promise.resolve({ skipped: "offline" });
+  if (running) return running;
+  if (manual) set(K.armed, "1");
+  running = (async () => {
+    emit();
+    const sent = sentSet();
+    let n = 0, error = null;
+    try {
+      for (const f of await pendingFiles()) {
+        const r = await api("PUT", f.path, { body: { message: "phone: " + f.path, content: await b64(f.body) } });
+        // 422 without a sha = the file is already in the repo: it arrived earlier.
+        if (r.status === 201 || r.status === 200 || r.status === 422) { sent.add(f.path); saveSent(sent); n++; continue; }
+        error = WHY[r.status] || "GitHub ответил " + r.status;
+        break;
+      }
+      if (!error) {
+        // The registry comes from the Mac; take it when it is there.
+        const r = await api("GET", "projects.yml", { raw: true });
+        if (r.ok) {
+          const text = await r.text();
+          const reg = ymlToRegistry(text);
+          if (reg.projects.length) { await writeRegistry(reg); await load(); done(); }
+        }
+      }
+    } catch (e) {
+      error = e.name === "AbortError" ? "GitHub не ответил за 20 секунд" : "нет связи с GitHub";
+    }
+    const prev = lastRun() || {};
+    set(K.last, JSON.stringify({ at: new Date().toISOString(), sent: n, error, okAt: error ? prev.okAt || null : new Date().toISOString() }));
+    return { sent: n, error };
+  })().finally(() => { running = null; emit(); });
+  return running;
+}
+
+export function bindSync() {
+  const go = () => syncNow().catch(() => {});
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) go(); });
+  addEventListener("online", go);
+  go();
+}
+

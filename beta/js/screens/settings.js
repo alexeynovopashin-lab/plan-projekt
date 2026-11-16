@@ -1,7 +1,8 @@
 // Settings (docs/screens.md §2.9) and the project editor (refs/13, refs/14).
 import { state, project, addEvent, openCount, allFiles } from "../store.js";
 import { zip } from "../zip.js";
-import { el, esc, toast, plural } from "../ui.js";
+import { el, esc, toast, plural, when } from "../ui.js";
+import { config, saveConfig, forgetKey, armed, lastRun, pendingFiles, syncNow, busy, onSync, DEFAULT_REPO } from "../sync.js";
 import { icon, PROJECT_ICONS, COLORS } from "../icons.js";
 import { nav, shell } from "../nav.js";
 
@@ -19,24 +20,53 @@ export function applyTheme() {
 
 export function settings() {
   const { s, body } = shell({ title: "Настройки", back: true });
-  const nEntries = state.entries.size, nEvents = state.events.length;
-  const files = nEntries + nEvents + [...state.blobs.keys()].length;
   const theme = ls("pp.theme") || "system";
-  const wifi = ls("pp.wifi") === "1";
 
-  body.appendChild(el('<div class="sec-cap">ОТПРАВКА</div>'));
-  const send = el(`<div class="group" style="--sep-left:16px">
-    <div class="row"><span class="r-main">Ждут отправки</span><span class="val">${nEntries} ${plural(nEntries, "запись", "записи", "записей")}, ${nEvents} ${plural(nEvents, "событие", "события", "событий")}</span></div>
-    <div class="row"><span class="r-main">Последняя отправка</span><span class="val">никогда</span></div>
-    <div class="row"><span class="r-main">Маршрут</span><span class="val">в веб-версии нет</span></div>
-    <button class="row" data-wifi><span class="r-main">Только по Wi-Fi</span><span class="toggle ${wifi ? "on" : ""}"></span></button>
-  </div>`);
-  send.querySelector("[data-wifi]").addEventListener("click", e => {
-    const on = ls("pp.wifi") !== "1"; ls("pp.wifi", on ? "1" : "0");
-    e.currentTarget.querySelector(".toggle").classList.toggle("on", on);
-  });
+  // Sending to the private entries repo (DECISIONS 16.11: «Научить бету отправлять напрямую в GitHub»).
+  body.appendChild(el('<div class="sec-cap">ОТПРАВКА В GITHUB</div>'));
+  const send = el('<div></div>');
   body.appendChild(send);
-  body.appendChild(el(`<div class="foot">Веб-версия ничего не отправляет: записи лежат только в этом браузере (${files} ${plural(files, "файл", "файла", "файлов")}). Ключи GitHub и функции Yandex появятся в сборке на Swift.</div>`));
+  let shown = false;
+  const paintSend = async () => {
+    if (shown && !send.isConnected) { off(); return; }   // settings closed
+    shown = true;
+    const c = config(), last = lastRun(), pend = await pendingFiles();
+    const nE = pend.filter(f => f.path.startsWith("entries/")).length, nO = pend.length - nE;
+    const status = busy() ? "отправляю…" : !c.token ? "ключа нет" : !armed() ? "ещё не отправляли" : last?.error ? "не вышло" : "работает";
+    const lastTxt = last?.okAt ? when(last.okAt) : "никогда";
+    send.innerHTML = "";
+    const g = el(`<div class="group" style="--sep-left:16px">
+      <div class="row"><span class="r-main">Ждут отправки</span><span class="val">${pend.length ? `${nE} ${plural(nE, "запись", "записи", "записей")}${nO ? `, ещё ${nO} ${plural(nO, "файл", "файла", "файлов")}` : ""}` : "ничего"}</span></div>
+      <div class="row"><span class="r-main">Последняя отправка</span><span class="val">${lastTxt}</span></div>
+      <div class="row"><span class="r-main">Состояние</span><span class="val">${status}</span></div>
+      ${last?.error ? `<div class="row"><span class="r-main" style="color:var(--red)">${esc(last.error)}</span></div>` : ""}
+      ${c.token ? `<button class="row accent-t" data-now ${busy() ? "disabled" : ""}><span class="r-main">Отправить сейчас</span>${icon("arrow.up")}</button>` : ""}
+    </div>`);
+    g.querySelector("[data-now]")?.addEventListener("click", async () => {
+      const r = await syncNow({ manual: true });
+      if (r?.sent) toast("Отправлено: " + r.sent + " " + plural(r.sent, "файл", "файла", "файлов"));
+      else if (r?.error) toast(r.error);
+    });
+    send.appendChild(g);
+    send.appendChild(el('<div class="sec-cap">КЛЮЧ</div>'));
+    const k = el(`<div class="group" style="--sep-left:16px">
+      <label class="row"><span class="r-main">Репозиторий</span><input data-repo value="${esc(c.repo || DEFAULT_REPO)}" autocapitalize="off" autocorrect="off" spellcheck="false" style="text-align:right;border:0;background:none;font:inherit;color:var(--ink-2);min-width:0;flex:1.4"></label>
+      <label class="row"><span class="r-main">Ключ (токен)</span><input data-token type="password" placeholder="${c.token ? "сохранён" : "github_pat_…"}" autocomplete="off" autocapitalize="off" spellcheck="false" style="text-align:right;border:0;background:none;font:inherit;color:var(--ink-2);min-width:0;flex:1.4"></label>
+      <button class="row accent-t" data-save><span class="r-main">Сохранить ключ</span></button>
+      ${c.token ? '<button class="row danger" data-forget><span class="r-main">Убрать ключ с телефона</span></button>' : ""}
+    </div>`);
+    k.querySelector("[data-save]").addEventListener("click", () => {
+      const repo = k.querySelector("[data-repo]").value, token = k.querySelector("[data-token]").value;
+      if (!/^[\w.-]+\/[\w.-]+$/.test(repo.trim())) { toast("Имя репозитория — владелец/имя"); return; }
+      saveConfig({ repo, ...(token.trim() ? { token } : {}) });
+      toast(token.trim() ? "Ключ сохранён. Первую отправку — кнопкой «Отправить сейчас»" : "Сохранено");
+    });
+    k.querySelector("[data-forget]")?.addEventListener("click", () => { if (confirm("Убрать ключ? Отправка остановится, записи останутся в телефоне.")) forgetKey(); });
+    send.appendChild(k);
+    send.appendChild(el(`<div class="foot">Записи сначала сохраняются в телефоне, а в репозиторий уходят, когда приложение открыто и есть сеть. Отправляются только новые файлы, ничего не стирается. Ключ хранится в памяти этого сайта на телефоне (localStorage), открыто, без шифрования: его видит код этого адреса${location.hostname.endsWith("github.io") ? " — а на github.io это и все ваши сайты на GitHub Pages. Ключ лучше держать в копии на Яндексе" : " — и только он"}. Wi-Fi от мобильной сети веб-версия на iPhone не отличает.</div>`));
+  };
+  const off = onSync(paintSend);
+  paintSend();
 
   // Export: entries leave the phone as one .zip in the contract's own layout (Alexey, 16.11).
   // Two taps on purpose: Safari lets share() run only right after a tap, and the file takes a moment to build.

@@ -1,9 +1,11 @@
 // App shell: four tabs, a stack of screens per tab, the «+» button, edge swipe back.
 import { load, onChange, counts, state, writeRegistry } from "./store.js";
-import { SEED_REGISTRY, removeSamples } from "./samples.js";
+import { removeSamples } from "./samples.js";
+import { SEED_REGISTRY } from "./registry_seed.js";
 import { bindUndo, $, $$ } from "./ui.js";
 import { nav } from "./nav.js";
 import { flushPending } from "./actions.js";
+import { bindSync } from "./sync.js";
 import { home } from "./screens/home.js";
 import { feed, smart } from "./screens/feed.js";
 import { entry } from "./screens/entry.js";
@@ -148,6 +150,7 @@ async function start() {
   edgeBack();
   setTab("projects");
   document.addEventListener("visibilitychange", () => { if (document.hidden) flushPending(); });
+  bindSync();   // send to the entries repo on open / return / back online, once Alexey sent the first time
   if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 }
 start();
