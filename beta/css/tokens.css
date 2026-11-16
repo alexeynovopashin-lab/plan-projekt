@@ -1,0 +1,92 @@
+/* PlanProjekt design tokens. One table for web and Swift: docs/design_tokens.md.
+   Surfaces, text and accents are iOS system colours (the look is native
+   Reminders/Notes, refs/15, refs/08). Glass recipe, motion and gesture
+   numbers are copied from Light Plan web beta @ ca30b3d (light_plan:Light_Plan/
+   beta/index.html, :root ~line 1309, zoomYear12ToMonth ~18463, holdForFan
+   ~36035, showUndo ~19746). Theme: system by default; data-theme overrides. */
+
+:root {
+  color-scheme: light dark;
+
+  /* ---- dark (default) ---- */
+  --bg: #000000;                    /* systemBackground (grouped, dark) */
+  --group: #1C1C1E;                 /* secondarySystemGroupedBackground */
+  --group-2: #2C2C2E;               /* tertiarySystemGroupedBackground */
+  --press: #3A3A3C;
+  --ink: #FFFFFF;                   /* label */
+  --ink-2: rgba(235,235,245,0.60);  /* secondaryLabel */
+  --ink-3: rgba(235,235,245,0.30);  /* tertiaryLabel */
+  --ink-4: rgba(235,235,245,0.18);  /* quaternaryLabel */
+  --sep: rgba(84,84,88,0.65);       /* separator */
+  --fill: rgba(120,120,128,0.36);   /* systemFill */
+  --fill-2: rgba(120,120,128,0.24); /* tertiarySystemFill */
+  --scrim: rgba(0,0,0,0.48);
+
+  /* glass — Light Plan names; blur added for iOS 26 bars (Light Plan keeps
+     blur off only where glass lies on text it must not smear) */
+  --glass-optic: blur(22px) saturate(1.8) brightness(1.06);
+  --glass-fill: rgba(44,44,46,0.62);
+  --glass-shine: rgba(255,255,255,0.22);
+  --glass-cast: rgba(0,0,0,0.45);
+  --sheet-glass: rgba(28,28,30,0.86);
+
+  /* system colours, dark variants */
+  --red: #FF453A; --orange: #FF9F0A; --yellow: #FFD60A; --green: #30D158;
+  --mint: #63E6E2; --teal: #40CBE0; --cyan: #64D2FF; --blue: #0A84FF;
+  --indigo: #5E5CE6; --purple: #BF5AF2; --pink: #FF375F; --brown: #AC8E68;
+  --gray: #8E8E93;
+
+  /* status colours (docs/screens.md §4) */
+  --st-open: var(--ink-3);
+  --st-taken: var(--blue);
+  --st-done: var(--orange);
+  --st-verified: var(--gray);
+  --st-reopened: var(--red);
+  --accent: var(--blue);
+
+  /* type: iOS text styles, pt = CSS px */
+  --t-large: 34px; --t-title: 22px; --t-head: 17px; --t-body: 17px;
+  --t-sub: 15px; --t-foot: 13px; --t-cap: 12px;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+
+  /* shape and space */
+  --r-group: 26px; --r-tile: 22px; --r-sheet: 38px; --r-field: 12px;
+  --pad: 16px; --row: 52px; --hit: 44px;
+
+  /* motion (Light Plan) */
+  --ease-zoom: cubic-bezier(0.3,0.7,0.1,1);
+  --dur-zoom: 460ms;
+  --ease-sheet: cubic-bezier(0.32,0.72,0,1);
+  --dur-sheet: 420ms;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #F2F2F7; --group: #FFFFFF; --group-2: #F2F2F7; --press: #E5E5EA;
+    --ink: #000000; --ink-2: rgba(60,60,67,0.60); --ink-3: rgba(60,60,67,0.30);
+    --ink-4: rgba(60,60,67,0.18); --sep: rgba(60,60,67,0.29);
+    --fill: rgba(120,120,128,0.20); --fill-2: rgba(118,118,128,0.12);
+    --scrim: rgba(0,0,0,0.25);
+    --glass-optic: blur(22px) saturate(1.8) brightness(1.02);
+    --glass-fill: rgba(255,255,255,0.66); --glass-shine: rgba(255,255,255,0.95);
+    --glass-cast: rgba(0,0,0,0.12); --sheet-glass: rgba(242,242,247,0.90);
+    --red: #FF3B30; --orange: #FF9500; --yellow: #FFCC00; --green: #34C759;
+    --mint: #00C7BE; --teal: #30B0C7; --cyan: #32ADE6; --blue: #007AFF;
+    --indigo: #5856D6; --purple: #AF52DE; --pink: #FF2D55; --brown: #A2845E;
+    --gray: #8E8E93;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #F2F2F7; --group: #FFFFFF; --group-2: #F2F2F7; --press: #E5E5EA;
+  --ink: #000000; --ink-2: rgba(60,60,67,0.60); --ink-3: rgba(60,60,67,0.30);
+  --ink-4: rgba(60,60,67,0.18); --sep: rgba(60,60,67,0.29);
+  --fill: rgba(120,120,128,0.20); --fill-2: rgba(118,118,128,0.12);
+  --scrim: rgba(0,0,0,0.25);
+  --glass-optic: blur(22px) saturate(1.8) brightness(1.02);
+  --glass-fill: rgba(255,255,255,0.66); --glass-shine: rgba(255,255,255,0.95);
+  --glass-cast: rgba(0,0,0,0.12); --sheet-glass: rgba(242,242,247,0.90);
+  --red: #FF3B30; --orange: #FF9500; --yellow: #FFCC00; --green: #34C759;
+  --mint: #00C7BE; --teal: #30B0C7; --cyan: #32ADE6; --blue: #007AFF;
+  --indigo: #5856D6; --purple: #AF52DE; --pink: #FF2D55; --brown: #A2845E;
+  --gray: #8E8E93;
+}
