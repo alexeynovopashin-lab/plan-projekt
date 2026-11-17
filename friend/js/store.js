@@ -95,10 +95,10 @@ export async function addEvent(fields, { at = new Date(), by = BY, silent = fals
   return ev;
 }
 
-export async function createEntry({ text, project, type, images = [], source = "text", at = new Date() },
+export async function createEntry({ text, project, type, urgency, images = [], source = "text", at = new Date() },
   { silent = false } = {}) {
   const id = newId(at);
-  const e = { id, created: localStamp(at), source, device: "web", project: project || null, type: type || null, attachments: [], text };
+  const e = { id, created: localStamp(at), source, device: "web", project: project || null, type: type || null, ...(type === "idea" ? { urgency: urgency === "urgent" ? "urgent" : "deferred" } : {}), attachments: [], text };
   let n = 0;
   for (const blob of images) {
     const p = attachPath(id, ++n);

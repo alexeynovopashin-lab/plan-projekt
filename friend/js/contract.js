@@ -31,7 +31,7 @@ export const entryPath = id => "entries/" + ymPath(id) + "/" + id + ".md";
 export const eventPath = id => "events/" + ymPath(id) + "/" + id + ".json";
 export const attachPath = (id, n) => "attachments/" + ymPath(id) + "/" + id + "-" + n + ".jpg";
 
-const ORDER = ["id", "created", "source", "device", "project", "type", "parsed_by"];
+const ORDER = ["id", "created", "source", "device", "project", "type", "urgency", "parsed_by"];
 
 function yamlScalar(v) {
   const s = String(v);
@@ -143,11 +143,13 @@ export function foldEntry(entry, events) {
       case "classify":
         if ("project" in ev) s.project = ev.project || null;
         if ("type" in ev) s.type = ev.type || null;
+        if ("urgency" in ev) s.urgency = ev.urgency || null;
         break;
       case "comment": s.comments.push({ text: ev.text, at: ev.at, by: ev.by }); break;
       case "text": s.text = ev.text; s.editedAt = ev.at; break;
     }
   }
+  s.urgency = s.type === "idea" ? (s.urgency === "urgent" ? "urgent" : "deferred") : null;
   s.openQuestion = s.questions.find(q => !q.answer) || null;
   s.waits = s.status === "done_beta" || !!s.openQuestion;
   s.closed = s.status === "verified" || s.status === "dropped";
@@ -158,6 +160,28 @@ export const TYPES = [
   { id: "idea", t: "Идея" }, { id: "bug", t: "Баг" },
   { id: "task", t: "Задача" }, { id: "question", t: "Вопрос" }
 ];
+export const URGENCY = [{ id: "deferred", t: "Отложенная" }, { id: "urgent", t: "Срочная" }];
+export const urgencyTitle = id => (URGENCY.find(x => x.id === id) || {}).t || "";
+
+export function agentVerb(e) {
+  switch (e.type) {
+    case "bug": case "task": return { work: true, code: "DO", verb: "ДЕЛАТЬ", short: "ДЕЛАТЬ" };
+    case "idea":
+      return e.urgency === "urgent"
+        ? { work: false, code: "DISCUSS", verb: "ОБСУДИТЬ С АЛЕКСЕЕМ: предложи, как сделать, код — только после его «да»", short: "ОБСУДИТЬ С АЛЕКСЕЕМ, КОД ТОЛЬКО ПОСЛЕ ЕГО «ДА»" }
+        : { work: false, code: "PLAN_ONLY", verb: "ТОЛЬКО В ПЛАН, КОД НЕ ПИСАТЬ", short: "ТОЛЬКО В ПЛАН, КОД НЕ ПИСАТЬ" };
+    case "question": return { work: false, code: "ANSWER", verb: "ОТВЕТИТЬ", short: "ОТВЕТИТЬ" };
+    default: return { work: false, code: "ASK", verb: "СПРОСИТЬ АЛЕКСЕЯ, ЧТО ЭТО", short: "СПРОСИТЬ АЛЕКСЕЯ, ЧТО ЭТО" };
+  }
+}
+export const VERB_TABLE = [
+  "Что можно делать с записью (по типу и срочности):",
+  "  ДЕЛАТЬ                      баг, задача",
+  "  ОБСУДИТЬ С АЛЕКСЕЕМ         идея срочная: предложи, как сделать; код — только после его «да»",
+  "  ТОЛЬКО В ПЛАН, КОД НЕ ПИСАТЬ  идея отложенная (так читаются и все старые идеи без срочности)",
+  "  ОТВЕТИТЬ                    вопрос",
+  "  СПРОСИТЬ АЛЕКСЕЯ, ЧТО ЭТО   без типа — это не работа"
+].join("\n");
 export const typeTitle = id => (TYPES.find(x => x.id === id) || {}).t || "";
 
 export const STATUS_TITLE = {

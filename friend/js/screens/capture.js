@@ -22,7 +22,7 @@ function bindKeyboard() {
 export function capture({ project: tag = null, type = null } = {}) {
   bindKeyboard();
   const opened = new Date();
-  const st = { tag, type, due: null, start: null, tags: [], link: null, files: [], panel: null };
+  const st = { tag, type, urgency: "deferred", due: null, start: null, tags: [], link: null, files: [], panel: null };
   const box = el(`<div class="cap">
     <div class="grab"></div>
     <div class="sheet-head">
@@ -83,8 +83,13 @@ export function capture({ project: tag = null, type = null } = {}) {
     box.querySelector("[data-title]").textContent = t ? t.t : "Новая запись";
     box.querySelector(".cap-head .p-date").textContent = stamp(opened);
     box.querySelector(".cap-head .p-tags").textContent = headTags(st.type, st.tags).map(x => "#" + x).join(" ");
-    chips.innerHTML = (st.due ? `<span class="chip due">${icon("calendar")} ${st.due.split("-").reverse().join(".")}</span>` : "") +
+    chips.innerHTML = (st.type === "idea" ? `<button class="chip urg ${st.urgency}" data-urg>${icon("lightbulb")} ${st.urgency === "urgent" ? "Срочная — обсудим" : "Отложенная — только в план"}</button>` : "") + (st.due ? `<span class="chip due">${icon("calendar")} ${st.due.split("-").reverse().join(".")}</span>` : "") +
       "";
+    const ub = chips.querySelector("[data-urg]");
+    if (ub) {
+      ub.addEventListener("pointerdown", e => e.preventDefault());
+      ub.addEventListener("click", () => { st.urgency = st.urgency === "urgent" ? "deferred" : "urgent"; paintChips(); });
+    }
     box.querySelectorAll(".accessory [data-p]").forEach(b => b.classList.toggle("on",
       (b.dataset.p === "type" && !!st.type) || (b.dataset.p === "due" && !!st.due) || (b.dataset.p === "tag" && st.tags.length > 0)));
   }
@@ -171,7 +176,7 @@ export function capture({ project: tag = null, type = null } = {}) {
     const text = ta.value.trim();
     if (!text && !st.files.length) return;
     ok.disabled = true;
-    const id = await createEntry({ text, project: st.tag, type: st.type, images: st.files }, { silent: true });
+    const id = await createEntry({ text, project: st.tag, type: st.type, urgency: st.urgency, images: st.files }, { silent: true });
     for (const t of st.tags) await addEvent({ entry: id, kind: "tag", add: t }, { silent: true });
     if (st.due || st.start) await addEvent({ entry: id, kind: "dates", ...(st.start ? { start: st.start } : {}), ...(st.due ? { due: st.due } : {}) }, { silent: true });
     if (st.link) await addEvent({ entry: id, kind: "link", to: st.link, rel: "related" }, { silent: true });

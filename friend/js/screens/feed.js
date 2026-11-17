@@ -43,7 +43,8 @@ export function paraHtml(e, { showProject = false } = {}) {
   const q = e.openQuestion;
   const lastComment = e.comments.length ? e.comments[e.comments.length - 1] : null;
   const tags = headTags(e.type, [...e.tags]);
-  const meta = [stChip, dueChip(e), showProject && e.project ? `<span class="chip proj">${projIcon(e.project, "sm")}${esc(project(e.project)?.title || e.project)}</span>` : ""].filter(Boolean).join("");
+  const urgChip = e.type === "idea" ? `<span class="chip urg ${e.urgency}">${e.urgency === "urgent" ? "срочная идея" : "отложенная идея"}</span>` : "";
+  const meta = [urgChip, stChip, dueChip(e), showProject && e.project ? `<span class="chip proj">${projIcon(e.project, "sm")}${esc(project(e.project)?.title || e.project)}</span>` : ""].filter(Boolean).join("");
   return `<div class="para st-${st} ${e.closed ? "closed" : ""} ${st === "dropped" ? "dropped" : ""}" data-id="${e.id}">
     <div class="sw-bg sw-left">${icon("trash")}<span>Отменить</span></div>
     <div class="sw-bg sw-right" style="background:var(--green)">${icon("checkmark")}<span>Проверено</span></div>

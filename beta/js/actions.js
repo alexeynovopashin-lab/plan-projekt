@@ -1,6 +1,6 @@
 // Entry actions shared by screens: deferred status with «Вернуть», pickers, menu.
 import { addEvent, state, project, done, allEntries } from "./store.js";
-import { TYPES, typeTitle, STATUS_TITLE } from "./contract.js";
+import { TYPES, typeTitle, STATUS_TITLE, urgencyTitle } from "./contract.js";
 import { el, esc, openSheet, showUndo, menu, toast, projIcon, stamp } from "./ui.js";
 import { icon } from "./icons.js";
 
@@ -155,6 +155,7 @@ export function entryMenu(anchor, e) {
       if ((tag || null) !== (e.project || null)) addEvent({ entry: e.id, kind: "classify", project: tag }).then(() => toast(tag ? "В «" + project(tag).title + "»" : "Во Входящие"));
     }) },
     { t: "Тип", sub: typeTitle(e.type) || "нет", icon: "lightbulb", fn: () => pickType(e.type, type => addEvent({ entry: e.id, kind: "classify", type })) },
+    ...(e.type === "idea" ? [{ t: "Срочность", sub: urgencyTitle(e.urgency), icon: "bolt", fn: () => addEvent({ entry: e.id, kind: "classify", urgency: e.urgency === "urgent" ? "deferred" : "urgent" }).then(() => toast(e.urgency === "urgent" ? "Отложенная" : "Срочная")) }] : []),
     { t: "Срок", sub: e.due || "нет", icon: "calendar", fn: () => pickDate(e.due, due => addEvent({ entry: e.id, kind: "dates", due })) },
     { t: "Тег", icon: "number", fn: () => pickTag(tag => addEvent({ entry: e.id, kind: "tag", add: tag })) },
     { t: "Связать с…", icon: "link", fn: () => pickLink(e) },

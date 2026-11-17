@@ -1,5 +1,5 @@
 import { state, project, blobUrl, addEvent } from "../store.js";
-import { typeTitle, STATUS_TITLE } from "../contract.js";
+import { typeTitle, STATUS_TITLE, urgencyTitle } from "../contract.js";
 import { el, esc, when, statusDot, viewImage, projIcon, autogrow, toast, dateLong, stamp, headTags } from "../ui.js";
 import { icon } from "../icons.js";
 import { nav, shell } from "../nav.js";
@@ -32,7 +32,7 @@ function histRow(ev) {
       t = REL[ev.rel] || "Связь"; sub = to ? "«" + esc(to.text.slice(0, 60)) + "»" : esc(ev.to); glyph = "link"; break;
     }
     case "dates": t = [("due" in ev) && (ev.due ? "Срок: " + dateLong(ev.due) : "Срок убран"), ("start" in ev) && ev.start && "Начать: " + dateLong(ev.start)].filter(Boolean).join(" · "); glyph = "calendar"; break;
-    case "classify": t = [("project" in ev) && ("Проект: " + esc(project(ev.project)?.title || "Входящие")), ("type" in ev) && ("Тип: " + (typeTitle(ev.type) || "без типа"))].filter(Boolean).join(" · "); glyph = "folder"; break;
+    case "classify": t = [("project" in ev) && ("Проект: " + esc(project(ev.project)?.title || "Входящие")), ("type" in ev) && ("Тип: " + (typeTitle(ev.type) || "без типа")), ("urgency" in ev) && ("Срочность: " + (urgencyTitle(ev.urgency) || "не задана"))].filter(Boolean).join(" · "); glyph = "folder"; break;
     case "comment": t = "Заметка агента"; sub = esc(ev.text); glyph = "bubble"; break;
     case "text": t = "Текст изменён"; sub = esc(ev.text.length > 120 ? ev.text.slice(0, 120) + "…" : ev.text); glyph = "pencil"; break;
     default: t = ev.kind;
@@ -54,7 +54,12 @@ export function entry(route) {
   const head = el(`<div class="entry-head">
     <button class="chip" data-proj style="padding:4px 10px 4px 4px;gap:6px">${projIcon(e.project, "sm")}<span>${esc(p ? p.title : "Входящие")}</span></button>
     <button class="chip st-${e.status}" data-st>${STATUS_TITLE[e.status]}${icon("chevron.down")}</button>
+    ${e.type === "idea" ? `<button class="chip urg ${e.urgency}" data-urg>${urgencyTitle(e.urgency)}</button>` : ""}
   </div>`);
+  head.querySelector("[data-urg]")?.addEventListener("click", () => {
+    const next = e.urgency === "urgent" ? "deferred" : "urgent";
+    addEvent({ entry: e.id, kind: "classify", urgency: next }).then(() => toast(next === "urgent" ? "Срочная: агент спросит" : "Отложенная: только в план"));
+  });
   head.querySelector("[data-st]").addEventListener("click", ev => statusMenu(ev.currentTarget, e));
   head.querySelector("[data-proj]").addEventListener("click", () => p ? nav.push({ s: "feed", tag: p.tag }) : nav.tab("inbox"));
   body.appendChild(head);

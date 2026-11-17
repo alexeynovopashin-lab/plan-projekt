@@ -582,3 +582,9 @@ mark { background: color-mix(in srgb, var(--yellow) 45%, transparent); color: in
 .setup-go { display: block; width: 100%; margin-top: 16px; height: 50px; border-radius: 25px; background: var(--accent); color: #fff; font-size: var(--t-body); font-weight: 600; }
 .setup-go:disabled { opacity: 0.6; }
 .setup-skip { display: block; margin: 8px auto 0; padding: 10px; color: var(--accent); font-size: var(--t-sub); }
+
+/* Idea urgency (Alexey, 18.11): deferred is quiet grey, urgent is orange; one tap switches it. */
+.chip.urg { background: var(--fill-2); color: var(--ink-2); }
+.chip.urg.urgent { background: color-mix(in srgb, var(--orange) 22%, transparent); color: var(--orange); font-weight: 600; }
+button.chip.urg { display: inline-flex; align-items: center; gap: 6px; }
+.cap-chips .chip.urg .ic { width: 15px; height: 15px; }

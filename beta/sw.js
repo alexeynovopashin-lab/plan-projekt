@@ -1,5 +1,5 @@
 // Offline shell. Bump VERSION on every beta change so the phone takes the new files.
-const VERSION = "pp-beta-10";
+const VERSION = "pp-beta-11";
 const FILES = [
   "./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png",
   "css/tokens.css", "css/app.css",
