@@ -48,8 +48,14 @@ function chrome() {
 }
 
 // Rebuild the visible screen in place, keeping its scroll; screens with update() refresh themselves.
+// Not while Alexey is typing in a screen field (the entry text, an answer): a rebuild would drop
+// what he typed. The screen catches up when the field loses focus.
+let heldRefresh = false;
+document.addEventListener("focusout", () => { if (heldRefresh) { heldRefresh = false; setTimeout(refresh, 0); } });
 function refresh() {
   const old = top();
+  const a = document.activeElement;
+  if (a && old.contains(a) && a.matches("textarea, input")) { heldRefresh = true; return; }
   if (old.update) { old.update(); chrome(); return; }
   const sc = old.querySelector(".scroller")?.scrollTop || 0;
   const n = build(old.route);

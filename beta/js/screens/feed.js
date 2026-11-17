@@ -6,7 +6,7 @@ import { TYPES } from "../contract.js";
 import { el, esc, stamp, headTags, statusDot, hold, swipeRow, viewImage, autogrow, projIcon, toast, plural } from "../ui.js";
 import { icon } from "../icons.js";
 import { nav, shell, searchBtn, wire } from "../nav.js";
-import { view, dropEntry, verifyEntry, entryMenu } from "../actions.js";
+import { view, dropEntry, verifyEntry, entryMenu, statusMenu } from "../actions.js";
 
 const FILTERS = [
   { id: "open", t: "Открытые", f: e => !e.closed },
@@ -47,7 +47,7 @@ export function paraHtml(e, { showProject = false } = {}) {
   const lastComment = e.comments.length ? e.comments[e.comments.length - 1] : null;
   const tags = headTags(e.type, [...e.tags]);
   const meta = [stChip, dueChip(e), showProject && e.project ? `<span class="chip proj">${projIcon(e.project, "sm")}${esc(project(e.project)?.title || e.project)}</span>` : ""].filter(Boolean).join("");
-  return `<div class="para ${e.closed ? "closed" : ""} ${st === "dropped" ? "dropped" : ""}" data-id="${e.id}">
+  return `<div class="para st-${st} ${e.closed ? "closed" : ""} ${st === "dropped" ? "dropped" : ""}" data-id="${e.id}">
     <div class="sw-bg sw-left">${icon("trash")}<span>Отменить</span></div>
     <div class="sw-bg sw-right" style="background:var(--green)">${icon("checkmark")}<span>Проверено</span></div>
     <div class="sw-body">
@@ -66,6 +66,8 @@ export function paraHtml(e, { showProject = false } = {}) {
 // Wire one rendered block: tap, picture, swipes, hold menu, answer.
 export function wirePara(node, e) {
   node.querySelectorAll("[data-open], .p-head").forEach(n => n.addEventListener("click", () => nav.push({ s: "entry", id: e.id })));
+  const dot = node.querySelector(".p-head .sd");
+  dot.addEventListener("click", ev => { ev.stopPropagation(); statusMenu(dot, e); });
   node.querySelectorAll(".p-img").forEach(img => img.addEventListener("click", ev => { ev.stopPropagation(); viewImage(img.src); }));
   if (e.status !== "dropped") {
     swipeRow(node, {

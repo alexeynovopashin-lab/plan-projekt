@@ -152,6 +152,9 @@ export function foldEntry(entry, events) {
         if ("type" in ev) s.type = ev.type || null;
         break;
       case "comment": s.comments.push({ text: ev.text, at: ev.at, by: ev.by }); break;
+      // Alexey, 17.11: «нажал на поле текста и сразу могу менять, как в обычном блокноте».
+      // The entry file stays as written; the latest text event is the text.
+      case "text": s.text = ev.text; s.editedAt = ev.at; break;
     }
   }
   s.openQuestion = s.questions.find(q => !q.answer) || null;

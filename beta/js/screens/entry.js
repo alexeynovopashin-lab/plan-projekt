@@ -4,7 +4,7 @@ import { typeTitle, STATUS_TITLE } from "../contract.js";
 import { el, esc, when, statusDot, viewImage, projIcon, autogrow, toast, dateLong, stamp, headTags } from "../ui.js";
 import { icon } from "../icons.js";
 import { nav, shell } from "../nav.js";
-import { view, verifyEntry, reopenEntry, entryMenu, pickDate, pickTag } from "../actions.js";
+import { view, verifyEntry, reopenEntry, entryMenu, pickDate, pickTag, statusMenu, pickLink } from "../actions.js";
 
 const SRC = { siri: "голосом через Сири", text: "текстом", share: "через «Поделиться»", agent: "агентом" };
 const REL = { related: "Связано с", duplicate_of: "Дубль записи", fixed_by: "Исправлено в", blocks: "Мешает" };
@@ -34,6 +34,7 @@ function histRow(ev) {
     case "dates": t = [("due" in ev) && (ev.due ? "Срок: " + dateLong(ev.due) : "Срок убран"), ("start" in ev) && ev.start && "Начать: " + dateLong(ev.start)].filter(Boolean).join(" · "); glyph = "calendar"; break;
     case "classify": t = [("project" in ev) && ("Проект: " + esc(project(ev.project)?.title || "Входящие")), ("type" in ev) && ("Тип: " + (typeTitle(ev.type) || "без типа"))].filter(Boolean).join(" · "); glyph = "folder"; break;
     case "comment": t = "Заметка агента"; sub = esc(ev.text); glyph = "bubble"; break;
+    case "text": t = "Текст изменён"; sub = esc(ev.text.length > 120 ? ev.text.slice(0, 120) + "…" : ev.text); glyph = "pencil"; break;
     default: t = ev.kind;
   }
   const mark = dot ? statusDot(dot) : `<span class="glyph">${icon(glyph || "clock")}</span>`;
@@ -52,13 +53,29 @@ export function entry(route) {
 
   const head = el(`<div class="entry-head">
     <button class="chip" data-proj style="padding:4px 10px 4px 4px;gap:6px">${projIcon(e.project, "sm")}<span>${esc(p ? p.title : "Входящие")}</span></button>
-    <span class="chip st-${e.status}">${STATUS_TITLE[e.status]}</span>
+    <button class="chip st-${e.status}" data-st>${STATUS_TITLE[e.status]}${icon("chevron.down")}</button>
   </div>`);
+  head.querySelector("[data-st]").addEventListener("click", ev => statusMenu(ev.currentTarget, e));
   head.querySelector("[data-proj]").addEventListener("click", () => p ? nav.push({ s: "feed", tag: p.tag }) : nav.tab("inbox"));
   body.appendChild(head);
   const headT = headTags(e.type, [...e.tags]);
   body.appendChild(el(`<div class="p-head entry-stamp"><span class="p-date">${stamp(e.created)}</span>${headT.length ? `<span class="p-tags">${headT.map(t => "#" + esc(t)).join(" ")}</span>` : ""}</div>`));
-  body.appendChild(el(`<div class="entry-text">${esc(e.text)}</div>`));
+  // The text is the field itself: tap and type, like a notepad (Alexey, 17.11). Saved when the
+  // field loses focus or the app goes to the background — one event per edit, not per keystroke.
+  const ta = el(`<textarea class="entry-text entry-edit" rows="1" enterkeyhint="enter" aria-label="Текст записи"></textarea>`);
+  ta.value = e.text;
+  autogrow(ta, 100000);
+  const save = async () => {
+    const t = ta.value.trim();
+    if (!t || t === e.text) { if (!t) ta.value = e.text; return; }
+    e.text = t;
+    await addEvent({ entry: e.id, kind: "text", text: t });
+    toast("Изменение сохранено");
+  };
+  ta.addEventListener("blur", save);
+  document.addEventListener("visibilitychange", () => { if (document.hidden && document.activeElement === ta) save(); });
+  body.appendChild(ta);
+  requestAnimationFrame(() => ta.dispatchEvent(new Event("input")));   // autogrow once it has a width
   body.appendChild(el(`<div class="subline" style="padding-top:6px">${SRC[e.source] || "текстом"}</div>`));
 
   if (e.attachments?.length) {
@@ -119,6 +136,9 @@ export function entry(route) {
       g.appendChild(r);
     }
   }
+  const add = el(`<button class="row"><span class="r-ic" style="--c:var(--indigo)">${icon("link")}</span><span class="r-main" style="color:var(--accent)">Связать с…</span>${icon("plus", "chev")}</button>`);
+  add.addEventListener("click", () => pickLink(e));
+  g.appendChild(add);
   body.appendChild(g);
 
   // History: who and when

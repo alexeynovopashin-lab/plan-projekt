@@ -1,7 +1,7 @@
 // Entry actions shared by screens: deferred status with «Вернуть», pickers, menu.
-import { addEvent, state, project, done } from "./store.js";
+import { addEvent, state, project, done, allEntries } from "./store.js";
 import { TYPES, typeTitle, STATUS_TITLE } from "./contract.js";
-import { el, esc, openSheet, showUndo, menu, toast, projIcon } from "./ui.js";
+import { el, esc, openSheet, showUndo, menu, toast, projIcon, stamp } from "./ui.js";
 import { icon } from "./icons.js";
 
 // A status change behind «Вернуть» is written only when the 6 s window ends:
@@ -45,6 +45,47 @@ export async function deferStatus(e, status, text) {
 export const dropEntry = e => deferStatus(e, "dropped", "Запись отменена");
 export const verifyEntry = e => deferStatus(e, "verified", "Проверено");
 export const reopenEntry = e => deferStatus(e, "reopened", "Открыта снова — агент увидит");
+export const doneEntry = e => deferStatus(e, "verified", "Сделано");
+
+// Tap on the status circle (Alexey, 17.11: «1А», after «Как поменять статус карточки?»).
+export function statusMenu(anchor, e) {
+  const items = [];
+  if (e.status === "done_beta") {
+    items.push({ t: "Проверено", icon: "checkmark", fn: () => verifyEntry(e) },
+      { t: "Не исправлено", icon: "arrow.uturn.backward", fn: () => reopenEntry(e) });
+  } else if (!e.closed) items.push({ t: "Сделано", icon: "checkmark", fn: () => doneEntry(e) });
+  if (e.closed) items.push({ t: "Открыть снова", icon: "arrow.uturn.backward", fn: () => reopenEntry(e) });
+  if (e.status !== "dropped") items.push("-", { t: "Отменить запись", icon: "trash", danger: true, fn: () => dropEntry(e) });
+  menu(anchor, items);
+}
+
+// «Связать с…»: any other entry, searched by its text (Alexey, 17.11: «реализовать глубже»).
+export function pickLink(e) {
+  const linked = new Set(e.links.map(l => l.to));
+  const all = allEntries().filter(x => x.id !== e.id && x.status !== "dropped" && !linked.has(x.id)).reverse();
+  const box = el(`<div class="pick"><div class="grab"></div><div class="sheet-head"><span style="width:44px"></span><h2>Связать с…</h2><button class="glass-btn" data-x>${icon("xmark")}</button></div>
+    <div class="inline-pick"><input type="search" placeholder="Поиск по тексту" enterkeyhint="search" style="flex:1"></div>
+    <div class="sheet-body pick-list"><div class="group"></div></div></div>`);
+  const g = box.querySelector(".group"), inp = box.querySelector("input");
+  const paint = () => {
+    const q = inp.value.trim().toLowerCase();
+    const list = (q ? all.filter(x => x.text.toLowerCase().includes(q)) : all).slice(0, 60);
+    g.innerHTML = list.length ? "" : '<div class="row"><span class="r-main" style="color:var(--ink-2)">Ничего не нашлось</span></div>';
+    for (const x of list) {
+      const b = el(`<button class="row">${projIcon(x.project)}<span class="r-main"><span class="r-t" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.text)}</span><span class="r-s">${esc(project(x.project)?.title || "Входящие")} · ${stamp(x.created)}</span></span></button>`);
+      b.addEventListener("click", async () => {
+        sh.close();
+        await addEvent({ entry: e.id, kind: "link", to: x.id, rel: "related" });
+        toast("Связано");
+      });
+      g.appendChild(b);
+    }
+  };
+  inp.addEventListener("input", paint);
+  paint();
+  const sh = openSheet(box, { tall: true });
+  box.querySelector("[data-x]").addEventListener("click", () => sh.close());
+}
 
 // ---- pickers (small sheets) ----
 export function pickProject(current, onPick, { allowInbox = true } = {}) {
@@ -116,6 +157,7 @@ export function entryMenu(anchor, e) {
     { t: "Тип", sub: typeTitle(e.type) || "нет", icon: "lightbulb", fn: () => pickType(e.type, type => addEvent({ entry: e.id, kind: "classify", type })) },
     { t: "Срок", sub: e.due || "нет", icon: "calendar", fn: () => pickDate(e.due, due => addEvent({ entry: e.id, kind: "dates", due })) },
     { t: "Тег", icon: "number", fn: () => pickTag(tag => addEvent({ entry: e.id, kind: "tag", add: tag })) },
+    { t: "Связать с…", icon: "link", fn: () => pickLink(e) },
     { t: "Копировать текст", icon: "doc.on.doc", fn: () => { navigator.clipboard?.writeText(e.text).then(() => toast("Скопировано"), () => toast("Не удалось скопировать")); } },
     "-",
     ...(e.status === "done_beta" ? [{ t: "Проверено", icon: "checkmark", fn: () => verifyEntry(e) }] : []),

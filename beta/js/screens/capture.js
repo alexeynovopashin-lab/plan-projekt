@@ -1,5 +1,5 @@
 // Capture sheet «+» (docs/screens.md §2.3), after «Новое напоминание» (refs/11, refs/12).
-import { createEntry, addEvent, project, allEntries, done } from "../store.js";
+import { createEntry, addEvent, project, allEntries, done, state, actualProjects } from "../store.js";
 import { TYPES } from "../contract.js";
 import { el, esc, openSheet, toJpeg, projIcon, toast, stamp, headTags } from "../ui.js";
 import { icon } from "../icons.js";
@@ -10,9 +10,15 @@ function bindKeyboard() {
   if (kbBound || !window.visualViewport) return;
   kbBound = true;
   const vv = window.visualViewport;
+  // iOS 26 home-screen app shrinks innerHeight with the keyboard but keeps 100% at the old height:
+  // the sheet stayed 740 pt tall in a 471 pt visible area and its text field went off the top
+  // (Alexey, 17.11: «Поля ввода уезжают наверх»). The sheet takes its height from the visible area.
+  const root = document.documentElement;
   const f = () => {
     const kb = Math.max(0, innerHeight - vv.height - vv.offsetTop);
-    document.documentElement.style.setProperty("--kb", kb + "px");
+    root.style.setProperty("--kb", kb + "px");
+    root.style.setProperty("--vvh", Math.round(vv.height) + "px");
+    root.classList.toggle("kb-open", vv.height < screen.height * 0.75);
   };
   vv.addEventListener("resize", f); vv.addEventListener("scroll", f); f();
 }
@@ -36,6 +42,7 @@ export function capture({ project: tag = null, type = null } = {}) {
         <div class="cap-thumbs"></div>
         <div class="cap-chips"></div>
       </div>
+      <div class="cap-pick" hidden><div class="cap-pick-t">Куда записать</div><div class="i-proj"></div></div>
       <div class="cap-meta group" style="margin-top:12px">
         <button class="row" data-proj></button>
       </div>
@@ -56,10 +63,27 @@ export function capture({ project: tag = null, type = null } = {}) {
   const thumbs = box.querySelector(".cap-thumbs"), chips = box.querySelector(".cap-chips");
   const panel = box.querySelector(".panel");
 
+  // From the home «+» there is no project yet: the same project buttons as in «Входящие» —
+  // pick now, or leave it and sort it there later (Alexey, 17.11).
+  const pickRow = box.querySelector(".cap-pick");
+  if (!tag) {
+    const act = actualProjects();
+    const order = [...act, ...state.projects.filter(p => !act.includes(p))];
+    pickRow.hidden = false;
+    const row = pickRow.querySelector(".i-proj");
+    row.innerHTML = `<button data-tag=""><span class="pico lg" style="--c:var(--gray)">${icon("tray")}</span><span class="t">Входящие</span></button>` +
+      order.map(p => `<button data-tag="${p.tag}"><span class="pico lg" style="--c:var(--${p.color || "gray"})">${icon(p.icon || "list.bullet")}</span><span class="t">${esc(p.title)}</span></button>`).join("");
+    row.querySelectorAll("button").forEach(b => {
+      b.addEventListener("pointerdown", e => e.preventDefault());   // keep the keyboard
+      b.addEventListener("mousedown", e => e.preventDefault());     // iOS moves focus on the mouse event
+      b.addEventListener("click", () => { st.tag = b.dataset.tag || null; paintProject(); });
+    });
+  }
   function paintProject() {
+    pickRow.querySelectorAll("button").forEach(b => b.classList.toggle("on", (b.dataset.tag || null) === (st.tag || null)));
     const p = project(st.tag);
     box.querySelector("[data-proj]").innerHTML = `${st.tag ? projIcon(st.tag) : `<span class="pico" style="--c:var(--gray)">${icon("tray")}</span>`}
-      <span class="r-main"><span class="r-t">${esc(p ? p.title : "Входящие")}</span><span class="r-s">${p ? "проект" : "проект выберете потом"}</span></span>${icon("chevron.right", "chev")}`;
+      <span class="r-main"><span class="r-t">${esc(p ? p.title : "Входящие")}</span><span class="r-s">${p ? "проект" : "без проекта — разберёте во «Входящих»"}</span></span>${icon("chevron.right", "chev")}`;
   }
   function paintChips() {
     const t = TYPES.find(x => x.id === st.type);

@@ -8,6 +8,7 @@ const P = {
   "chevron.right": '<path d="m9 5 7 7-7 7"/>',
   "chevron.left": '<path d="m15 5-7 7 7 7"/>',
   "chevron.down": '<path d="m6 9 6 6 6-6"/>',
+  "pencil": '<path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
   "ellipsis": '<circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/>',
   "xmark": '<path d="M6 6l12 12M18 6 6 18"/>',
   "checkmark": '<path d="m5 12.5 4.5 4.5L19 7.5"/>',

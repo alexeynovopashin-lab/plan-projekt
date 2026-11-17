@@ -113,6 +113,8 @@ body.composer .tabbar { transform: translateY(140%); opacity: 0; pointer-events:
 body.composer .fab { bottom: calc(env(safe-area-inset-bottom) + var(--composer-h, 64px) + 14px); width: 52px; height: 52px; }
 
 /* ---------- home tiles (Reminders, refs/15) ---------- */
+/* Icon pinned to the corner: a <button> centres its content on iOS, which put the icon on the label
+   (Alexey, 17.11: «кружочки липнут к тексту»). */
 .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 4px var(--pad) 6px; }
 .tile {
   position: relative; height: 88px; border-radius: var(--r-tile); padding: 11px 14px 10px; text-align: left; color: #fff;
@@ -120,7 +122,7 @@ body.composer .fab { bottom: calc(env(safe-area-inset-bottom) + var(--composer-h
   overflow: hidden; transition: transform .15s;
 }
 .tile:active { transform: scale(0.97); }
-.tile .t-ic { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.95); color: var(--c); display: grid; place-items: center; }
+.tile .t-ic { position: absolute; top: 11px; left: 14px; width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.95); color: var(--c); display: grid; place-items: center; }
 .tile .t-ic .ic { width: 19px; height: 19px; stroke-width: 2.2; }
 .tile .t-n { position: absolute; top: 6px; right: 14px; font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .tile .t-l { position: absolute; left: 14px; bottom: 9px; font-size: var(--t-head); font-weight: 600; }
@@ -205,6 +207,14 @@ button.row:active, .row.tap:active { background: var(--press); }
 .p-head .p-tags { color: var(--accent); }
 .p-head .p-tags:not(:empty)::before { content: "·"; color: var(--ink-3); margin-right: 8px; }
 .p-head .sd { width: 18px; height: 18px; }
+/* The circle is a button (Alexey, 17.11: «1А»); its hit area reaches 40 pt. */
+.p-head .sd::before { content: ""; position: absolute; inset: -11px; }
+/* Status colour as a stripe on the left (Alexey, 17.11: «2А»); open entries stay without colour. */
+.para .sw-body::after { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 4px; border-radius: 0 3px 3px 0; background: transparent; }
+.para.st-taken .sw-body::after { background: var(--st-taken); }
+.para.st-done_beta .sw-body::after { background: var(--st-done); }
+.para.st-reopened .sw-body::after { background: var(--st-reopened); }
+.para.st-verified .sw-body::after { background: var(--st-verified); }
 .list-bar { display: flex; align-items: center; justify-content: space-between; padding: 2px calc(var(--pad) + 4px) 8px; font-size: var(--t-foot); color: var(--ink-2); }
 .sort-btn { display: inline-flex; align-items: center; gap: 5px; color: var(--accent); font-size: var(--t-foot); font-weight: 500; min-height: 32px; }
 .sort-btn .ic { width: 15px; height: 15px; }
@@ -340,25 +350,34 @@ button.row:active, .row.tap:active { background: var(--press); }
 .cap .cap-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .cap .cap-chips .chip { font-size: var(--t-foot); padding: 4px 10px; border-radius: 12px; }
 .cap .cap-meta { margin-top: 12px; }
-.cap .cap-scroll { flex: 1; overflow-y: auto; padding-bottom: 90px; }
+.cap .cap-scroll { flex: 1; overflow-y: auto; padding-bottom: 16px; }
+/* The toolbar is the sheet's last strip, not a floating layer: floating, it covered the project and
+   «Подробно» rows (Alexey's screenshot, 17.11). */
 .accessory {
-  position: fixed; left: 10px; right: 10px; z-index: 5; height: 52px; border-radius: 26px;
-  display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; bottom: calc(var(--kb, 0px) + 10px + env(safe-area-inset-bottom));
-  transition: bottom .25s var(--ease-sheet);
+  position: relative; flex: none; z-index: 5; height: 52px; border-radius: 26px; margin: 4px 10px var(--bar-bottom);
+  display: grid; grid-template-columns: repeat(4, 1fr); align-items: center;
 }
+/* Keyboard up: the sheet fits the visible area, and the toolbar sits on the keyboard — the home-bar
+   gap is under the keyboard then (measured: 44 pt of empty space, Alexey's screenshot 17.11). */
+.cap-sheet.tall { height: calc(var(--vvh, 100%) - env(safe-area-inset-top) - 10px); max-height: none; padding-bottom: 0; bottom: var(--kb, 0px); }
+.kb-open .accessory { margin-bottom: 8px; }
+/* With the keyboard up there are ~400 pt: a shorter empty field leaves room for the project buttons. */
+.kb-open .cap textarea { min-height: 48px; }
+.kb-open .cap .cap-pick { margin-top: 8px; }
+.kb-open .cap .panel { bottom: calc(var(--kb, 0px) + 64px); }
 .accessory button { height: 52px; display: grid; place-items: center; }
 .accessory button.on { color: var(--accent); }
 .accessory .ic { width: 24px; height: 24px; }
 /* pickers of the accessory sit right above it, so the keyboard never hides them */
-.cap .panel { position: fixed; left: 0; right: 0; z-index: 5; bottom: calc(var(--kb, 0px) + 66px + env(safe-area-inset-bottom)); }
+.cap .panel { position: fixed; left: 0; right: 0; z-index: 5; bottom: calc(var(--bar-bottom) + 58px); }
 .cap .panel .inline-pick { padding: 8px 12px; }
 .cap .panel .inline-pick button { background: var(--glass-fill); -webkit-backdrop-filter: var(--glass-optic); backdrop-filter: var(--glass-optic); box-shadow: 0 4px 14px var(--glass-cast); }
 .cap .panel .inline-pick button.on { background: var(--accent); }
 .inline-pick { display: flex; gap: 8px; padding: 10px var(--pad) 0; flex-wrap: wrap; }
 .inline-pick button { padding: 7px 14px; border-radius: 16px; background: var(--fill-2); font-size: var(--t-sub); font-weight: 500; }
 .inline-pick button.on { background: var(--accent); color: #fff; }
-.inline-pick input[type=date], .inline-pick input[type=text] {
-  background: var(--fill-2); border: 0; outline: 0; border-radius: 16px; padding: 7px 14px; font-size: var(--t-sub); min-width: 0;
+.inline-pick input[type=date], .inline-pick input[type=text], .inline-pick input[type=search] {
+  background: var(--fill-2); border: 0; outline: 0; border-radius: 16px; padding: 7px 14px; font-size: var(--t-sub); min-width: 0; -webkit-appearance: none; appearance: none;
 }
 
 /* context menu */
@@ -405,6 +424,15 @@ body.composer .undo { bottom: calc(env(safe-area-inset-bottom) + var(--composer-
 .viewer .v-close { position: absolute; top: calc(env(safe-area-inset-top) + 10px); left: 16px; z-index: 2; color: #fff; background: rgba(60,60,60,0.6); }
 
 /* ---------- entry screen ---------- */
+textarea.entry-edit { display: block; width: calc(100% - 2 * var(--pad)); margin: 0 var(--pad); padding: 0 0 6px; border: 0; outline: 0; background: none; resize: none; color: inherit; font-family: inherit; overflow: hidden; }
+.cap .cap-pick { margin: 14px var(--pad) 0; }
+.cap .cap-pick-t { font-size: var(--t-foot); color: var(--ink-2); padding: 0 4px; }
+.cap .i-proj { display: flex; gap: 10px; overflow-x: auto; margin: 8px calc(-1 * var(--pad)) 0; padding: 2px var(--pad) 4px; scrollbar-width: none; }
+.cap .i-proj::-webkit-scrollbar { display: none; }
+.cap .i-proj button { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 58px; flex: none; border-radius: 14px; padding: 4px 0; }
+.cap .i-proj button.on { background: var(--fill-2); box-shadow: inset 0 0 0 2px var(--accent); }
+.cap .i-proj span.t { font-size: 11px; color: var(--ink-2); max-width: 54px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-head .chip .ic { width: 12px; height: 12px; margin-left: 2px; }
 .entry-text { padding: 0 var(--pad) 6px; font-size: 20px; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; -webkit-user-select: text; user-select: text; }
 .entry-head { display: flex; align-items: center; gap: 8px; padding: 0 var(--pad) 12px; flex-wrap: wrap; }
 .entry-imgs { padding: 6px var(--pad) 4px; display: grid; gap: 8px; }
@@ -530,7 +558,7 @@ mark { background: color-mix(in srgb, var(--yellow) 45%, transparent); color: in
 
 @media (min-width: 700px) {
   #app { max-width: 480px; margin: 0 auto; box-shadow: 0 0 0 0.5px var(--sep); }
-  .tabbar, .composer, .undo, .accessory { max-width: calc(480px - 2 * var(--pad)); margin: 0 auto; }
+  .tabbar, .composer, .undo { max-width: calc(480px - 2 * var(--pad)); margin: 0 auto; }
   .composer { max-width: 480px; }
   .tabbar { left: max(var(--pad), calc(50% - 240px + var(--pad))); right: auto; width: calc(480px - 2 * var(--pad) - 68px); margin: 0; }
   .fab { right: max(var(--pad), calc(50% - 240px + var(--pad))); }
