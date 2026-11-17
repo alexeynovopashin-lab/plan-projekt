@@ -430,7 +430,10 @@ textarea.entry-edit { display: block; width: calc(100% - 2 * var(--pad)); margin
 .cap .i-proj { display: flex; gap: 10px; overflow-x: auto; margin: 8px calc(-1 * var(--pad)) 0; padding: 2px var(--pad) 4px; scrollbar-width: none; }
 .cap .i-proj::-webkit-scrollbar { display: none; }
 .cap .i-proj button { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 58px; flex: none; border-radius: 14px; padding: 4px 0; }
-.cap .i-proj button.on { background: var(--fill-2); box-shadow: inset 0 0 0 2px var(--accent); }
+/* Selected project: the iOS way, a small checkmark badge on the icon, no outline (Alexey, 18.11). */
+.cap .i-proj button { position: relative; }
+.cap .i-proj button.on .pico::after { content: ""; position: absolute; top: 0; right: 7px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 13px no-repeat; box-shadow: 0 0 0 2px var(--bg); }
+.cap .i-proj button.on span.t { color: var(--ink); font-weight: 600; }
 .cap .i-proj span.t { font-size: 11px; color: var(--ink-2); max-width: 54px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .entry-head .chip .ic { width: 12px; height: 12px; margin-left: 2px; }
 .entry-text { padding: 0 var(--pad) 6px; font-size: 20px; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; -webkit-user-select: text; user-select: text; }
