@@ -8,6 +8,7 @@ export const FLAVOR = {
   by: "alexey:iphone",               // `by` of events made on the phone (data_contract §3)
   byMac: "alexey:mac",
   defaultRepo: "alexeynovopashin-lab/planprojekt-entries",
+  newProject: false,                 // true: «Новый проект» in settings (Alexey, 18.11, for the friend copy)
   setup: false                       // true: the setup instruction is the first screen until GitHub works
 };
 export const key = name => FLAVOR.key + name;

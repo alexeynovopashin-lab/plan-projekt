@@ -118,20 +118,33 @@ export function settings() {
     r.addEventListener("click", () => nav.push({ s: "project", tag: p.tag }));
     g.appendChild(r);
   }
+  if (FLAVOR.newProject) {
+    const add = el(`<button class="row accent-t"><span class="r-main">Новый проект</span>${icon("plus")}</button>`);
+    add.addEventListener("click", () => nav.push({ s: "project", fresh: true }));
+    g.appendChild(add);
+  }
   body.appendChild(g);
-  body.appendChild(el('<div class="foot">Новый проект пока заводится только на Mac — создавать ли их с телефона, пока нельзя.</div>'));
+  body.appendChild(el(FLAVOR.newProject ? '<div class="foot">Проект появляется сразу и уходит в репозиторий вместе с записями. Произношения нужны только для голоса.</div>' : '<div class="foot">Новый проект пока заводится только на Mac.</div>'));
 
   return s;
 }
 
+function newTag() {
+  const have = new Set(state.projects.map(p => p.tag));
+  let t;
+  do { t = "p_" + Math.random().toString(36).slice(2, 8); } while (have.has(t));
+  return t;
+}
+
 export function projectEditor(route) {
-  const p0 = project(route.tag);
+  const fresh = !!route.fresh;
+  const p0 = fresh ? { tag: newTag(), title: "", icon: "list.bullet", color: "blue", aliases: [], pinned: true } : project(route.tag);
   const d = { title: p0.title, icon: p0.icon || "list.bullet", color: p0.color || "gray", aliases: [...(p0.aliases || [])], pinned: !!p0.pinned };
   const right = `<button class="glass-btn accent" data-ok aria-label="Готово">${icon("checkmark")}</button>`;
   const { s, body } = shell({ back: true, right });
-  s.querySelector(".mini-title").textContent = p0.title;
+  s.querySelector(".mini-title").textContent = fresh ? "Новый проект" : p0.title;
 
-  const head = el(`<div class="pp-head"><span class="pico xl"></span><input value="${esc(d.title)}" aria-label="Название"></div>`);
+  const head = el(`<div class="pp-head"><span class="pico xl"></span><input value="${esc(d.title)}" placeholder="Название проекта" aria-label="Название"></div>`);
   const paintHead = () => { const pi = head.querySelector(".pico"); pi.style.setProperty("--c", `var(--${d.color})`); pi.innerHTML = icon(d.icon); };
   head.querySelector("input").addEventListener("input", e => { d.title = e.target.value; });
   body.appendChild(head); paintHead();
@@ -168,6 +181,14 @@ export function projectEditor(route) {
   body.appendChild(el('<div class="foot">Как телефон пишет название, когда вы его говорите. Разбор ищет эти слова после типа: «идея для <b>лайт план</b>…».</div>'));
 
   s.querySelector("[data-ok]").addEventListener("click", async () => {
+    if (fresh) {
+      const title = d.title.trim();
+      if (!title) { toast("Введите название проекта"); return; }
+      await addEvent({ kind: "project", tag: p0.tag, title, icon: d.icon, color: d.color, pinned: d.pinned, aliases: d.aliases.filter(Boolean) });
+      toast("Проект создан");
+      nav.pop();
+      return;
+    }
     const ch = { kind: "project", tag: p0.tag };
     if (d.title.trim() && d.title.trim() !== p0.title) ch.title = d.title.trim();
     if (d.icon !== p0.icon) ch.icon = d.icon;

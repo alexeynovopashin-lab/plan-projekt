@@ -1,4 +1,4 @@
-const VERSION = "pp-friend-9";
+const VERSION = "pp-friend-10";
 const FILES = [
   "./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png",
   "css/tokens.css", "css/app.css",
