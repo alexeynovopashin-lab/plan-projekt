@@ -564,3 +564,21 @@ mark { background: color-mix(in srgb, var(--yellow) 45%, transparent); color: in
   .fab { right: max(var(--pad), calc(50% - 240px + var(--pad))); }
   .sheet { max-width: 480px; margin: 0 auto; }
 }
+
+/* Setup screen of the friend copy (js/screens/setup.js; Alexey, 17.11: «открываешь PWA - там инструкция»). */
+.setup { position: fixed; inset: 0; z-index: 200; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.setup-in { padding: calc(env(safe-area-inset-top) + 24px) var(--pad) calc(env(safe-area-inset-bottom) + 24px); max-width: 560px; margin: 0 auto; }
+.setup h1 { font-size: 30px; line-height: 1.15; font-weight: 700; margin: 0 0 10px; }
+.setup-lead, .setup-note { color: var(--ink-2); font-size: var(--t-sub); line-height: 1.4; margin: 0 0 16px; }
+.setup-note { margin-top: 12px; }
+.setup-steps { margin: 0 0 18px; padding-left: 22px; line-height: 1.45; }
+.setup-steps li { margin-bottom: 12px; }
+.setup-steps li.done { color: var(--ink-2); }
+.setup-steps a { color: var(--accent); }
+.setup-steps code, .setup-note code { font-size: 0.9em; background: var(--fill-2); padding: 1px 5px; border-radius: 6px; }
+.setup-steps .ok { color: var(--green); font-weight: 600; }
+.setup-form .row input { flex: 1.6; min-width: 0; text-align: right; border: 0; outline: 0; background: none; font: inherit; color: var(--ink); }
+.setup-err { color: var(--red); margin: 12px 4px 0; line-height: 1.35; }
+.setup-go { display: block; width: 100%; margin-top: 16px; height: 50px; border-radius: 25px; background: var(--accent); color: #fff; font-size: var(--t-body); font-weight: 600; }
+.setup-go:disabled { opacity: 0.6; }
+.setup-skip { display: block; margin: 8px auto 0; padding: 10px; color: var(--accent); font-size: var(--t-sub); }

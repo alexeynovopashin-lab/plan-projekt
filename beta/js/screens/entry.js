@@ -4,6 +4,7 @@ import { typeTitle, STATUS_TITLE } from "../contract.js";
 import { el, esc, when, statusDot, viewImage, projIcon, autogrow, toast, dateLong, stamp, headTags } from "../ui.js";
 import { icon } from "../icons.js";
 import { nav, shell } from "../nav.js";
+import { FLAVOR } from "../flavor.js";
 import { view, verifyEntry, reopenEntry, entryMenu, pickDate, pickTag, statusMenu, pickLink } from "../actions.js";
 
 const SRC = { siri: "голосом через Сири", text: "текстом", share: "через «Поделиться»", agent: "агентом" };
@@ -12,8 +13,8 @@ const REL = { related: "Связано с", duplicate_of: "Дубль запис
 function who(by) {
   if (!by) return "";
   if (by.startsWith("agent:")) return "агент " + (project(by.slice(6))?.title || by.slice(6));
-  if (by === "alexey:iphone") return "вы, iPhone";
-  if (by === "alexey:mac") return "вы, Mac";
+  if (by === FLAVOR.by) return "вы, iPhone";
+  if (by === FLAVOR.byMac) return "вы, Mac";
   return by;
 }
 
@@ -143,7 +144,7 @@ export function entry(route) {
 
   // History: who and when
   body.appendChild(el('<div class="sec-cap">ИСТОРИЯ</div>'));
-  const rows = [`<div class="h-row"><div class="h-dot">${statusDot({ status: "open" })}</div><div><div class="h-t">Записано ${SRC[e.source] || "текстом"}</div><div class="h-s">${esc(who(e.device === "mac" ? "alexey:mac" : "alexey:iphone"))} · ${when(e.created)}</div></div></div>`]
+  const rows = [`<div class="h-row"><div class="h-dot">${statusDot({ status: "open" })}</div><div><div class="h-t">Записано ${SRC[e.source] || "текстом"}</div><div class="h-s">${esc(who(e.device === "mac" ? FLAVOR.byMac : FLAVOR.by))} · ${when(e.created)}</div></div></div>`]
     .concat(e.history.map(histRow));
   body.appendChild(el(`<div class="hist">${rows.join("")}</div>`));
   body.appendChild(el(`<div class="foot mono" style="opacity:.6">${esc(e.id)}</div>`));

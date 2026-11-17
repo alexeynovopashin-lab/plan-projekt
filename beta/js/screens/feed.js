@@ -6,6 +6,7 @@ import { TYPES } from "../contract.js";
 import { el, esc, stamp, headTags, statusDot, hold, swipeRow, viewImage, autogrow, projIcon, toast, plural } from "../ui.js";
 import { icon } from "../icons.js";
 import { nav, shell, searchBtn, wire } from "../nav.js";
+import { key } from "../flavor.js";
 import { view, dropEntry, verifyEntry, entryMenu, statusMenu } from "../actions.js";
 
 const FILTERS = [
@@ -16,7 +17,7 @@ const FILTERS = [
 
 // Sort order, shared by every list of blocks: newest first unless Alexey flips it.
 function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch {} return v; }
-export const sortOrder = () => (ls("pp.sort") === "old" ? "old" : "new");
+export const sortOrder = () => (ls(key("sort")) === "old" ? "old" : "new");
 export function sorted(list) {
   const a = list.slice().sort((x, y) => (x.id < y.id ? -1 : 1));
   return sortOrder() === "new" ? a.reverse() : a;
@@ -25,7 +26,7 @@ export function sortButton(onChange) {
   const b = el(`<button class="sort-btn">${icon("arrow.up.arrow.down")}<span></span></button>`);
   const paint = () => { b.querySelector("span").textContent = sortOrder() === "new" ? "Сначала новые" : "Сначала старые"; };
   paint();
-  b.addEventListener("click", () => { ls("pp.sort", sortOrder() === "new" ? "old" : "new"); paint(); onChange(); });
+  b.addEventListener("click", () => { ls(key("sort"), sortOrder() === "new" ? "old" : "new"); paint(); onChange(); });
   return b;
 }
 

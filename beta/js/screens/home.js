@@ -50,7 +50,7 @@ export function home() {
     r.addEventListener("click", () => nav.push({ s: "feed", tag: p.tag }));
     g.appendChild(r);
   }
-  if (!sorted.length) g.appendChild(el('<div class="row"><span class="r-main r-s">Проектов нет. Настройки → «Заполнить примерами».</span></div>'));
+  if (!sorted.length) g.appendChild(el('<div class="row"><span class="r-main r-s">Проектов пока нет: записи идут во «Входящие».</span></div>'));
   body.appendChild(g);
   return s;
 }

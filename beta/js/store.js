@@ -4,9 +4,10 @@ import {
   newId, localStamp, entryPath, eventPath, attachPath, entryToMd, mdToEntry,
   registryToYml, ymlToRegistry, foldEntry
 } from "./contract.js";
+import { FLAVOR } from "./flavor.js";
 
-const DB_NAME = "planprojekt-beta";   // beta keeps its own data, like Light Plan
-const BY = "alexey:iphone";
+const DB_NAME = FLAVOR.db;   // each copy keeps its own data, like Light Plan
+const BY = FLAVOR.by;
 let db = null;
 const listeners = new Set();
 

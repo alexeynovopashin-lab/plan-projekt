@@ -5,7 +5,9 @@ import { SEED_REGISTRY } from "./registry_seed.js";
 import { bindUndo, $, $$ } from "./ui.js";
 import { nav } from "./nav.js";
 import { flushPending } from "./actions.js";
-import { bindSync } from "./sync.js";
+import { bindSync, config } from "./sync.js";
+import { FLAVOR, key } from "./flavor.js";
+import { openSetup } from "./screens/setup.js";
 import { home } from "./screens/home.js";
 import { feed, smart } from "./screens/feed.js";
 import { entry } from "./screens/entry.js";
@@ -145,9 +147,9 @@ async function start() {
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
   bindUndo();
   await load();
-  if (!state.registry.projects.length) { await writeRegistry(SEED_REGISTRY); await load(); }   // first launch: his projects, no entries
+  if (!state.registry.projects.length && SEED_REGISTRY.projects.length) { await writeRegistry(SEED_REGISTRY); await load(); }   // first launch: his projects, no entries
   try {
-    if (!localStorage.getItem("pp.samples-removed")) { await removeSamples(); localStorage.setItem("pp.samples-removed", "1"); }
+    if (!localStorage.getItem(key("samples-removed"))) { await removeSamples(); localStorage.setItem(key("samples-removed"), "1"); }
   } catch {}
   navigator.storage?.persist?.().catch(() => {});   // ask Safari to keep entries when space runs low
   $$(".tabbar button").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
@@ -156,6 +158,7 @@ async function start() {
   edgeBack();
   setTab("projects");
   document.addEventListener("visibilitychange", () => { if (document.hidden) flushPending(); });
+  if (FLAVOR.setup && !config().token) openSetup();
   bindSync();   // send to the entries repo on open / return / back online, once Alexey sent the first time
   if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 }

@@ -5,13 +5,15 @@ import { el, esc, toast, plural, when } from "../ui.js";
 import { config, saveConfig, forgetKey, armed, lastRun, pendingFiles, syncNow, busy, onSync, DEFAULT_REPO } from "../sync.js";
 import { icon, PROJECT_ICONS, COLORS } from "../icons.js";
 import { nav, shell } from "../nav.js";
+import { FLAVOR, key } from "../flavor.js";
+import { openSetup } from "./setup.js";
 
 function ls(k, v) {
   try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch { return null; }
   return v;
 }
 export function applyTheme() {
-  const t = ls("pp.theme") || "system";
+  const t = ls(key("theme")) || "system";
   if (t === "system") document.documentElement.removeAttribute("data-theme");
   else document.documentElement.setAttribute("data-theme", t);
   const dark = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
@@ -20,9 +22,14 @@ export function applyTheme() {
 
 export function settings() {
   const { s, body } = shell({ title: "Настройки", back: true });
-  const theme = ls("pp.theme") || "system";
+  const theme = ls(key("theme")) || "system";
 
   // Sending to the private entries repo (DECISIONS 16.11: «Научить бету отправлять напрямую в GitHub»).
+  if (FLAVOR.setup) {
+    const h = el(`<div class="group" style="--sep-left:16px"><button class="row accent-t"><span class="r-main">Инструкция по подключению</span>${icon("chevron.right", "chev")}</button></div>`);
+    h.querySelector("button").addEventListener("click", () => openSetup({ again: true }));
+    body.appendChild(h);
+  }
   body.appendChild(el('<div class="sec-cap">ОТПРАВКА В GITHUB</div>'));
   const send = el('<div></div>');
   body.appendChild(send);
@@ -50,7 +57,7 @@ export function settings() {
     send.appendChild(g);
     send.appendChild(el('<div class="sec-cap">КЛЮЧ</div>'));
     const k = el(`<div class="group" style="--sep-left:16px">
-      <label class="row"><span class="r-main">Репозиторий</span><input data-repo value="${esc(c.repo || DEFAULT_REPO)}" autocapitalize="off" autocorrect="off" spellcheck="false" style="text-align:right;border:0;background:none;font:inherit;color:var(--ink-2);min-width:0;flex:1.4"></label>
+      <label class="row"><span class="r-main">Репозиторий</span><input data-repo value="${esc(c.repo || DEFAULT_REPO)}" placeholder="логин/имя-репозитория" autocapitalize="off" autocorrect="off" spellcheck="false" style="text-align:right;border:0;background:none;font:inherit;color:var(--ink-2);min-width:0;flex:1.4"></label>
       <label class="row"><span class="r-main">Ключ (токен)</span><input data-token type="password" placeholder="${c.token ? "сохранён" : "github_pat_…"}" autocomplete="off" autocapitalize="off" spellcheck="false" style="text-align:right;border:0;background:none;font:inherit;color:var(--ink-2);min-width:0;flex:1.4"></label>
       <button class="row accent-t" data-save><span class="r-main">Сохранить ключ</span></button>
       ${c.token ? '<button class="row danger" data-forget><span class="r-main">Убрать ключ с телефона</span></button>' : ""}
@@ -103,7 +110,7 @@ export function settings() {
   body.appendChild(el('<div class="sec-cap">ОФОРМЛЕНИЕ</div>'));
   const seg = el(`<div class="seg" style="margin-top:0">${[["system", "Как в системе"], ["light", "Светлая"], ["dark", "Тёмная"]].map(([k, t]) => `<button data-t="${k}" class="${theme === k ? "on" : ""}">${t}</button>`).join("")}</div>`);
   seg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
-    ls("pp.theme", b.dataset.t); applyTheme();
+    ls(key("theme"), b.dataset.t); applyTheme();
     seg.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
   }));
   body.appendChild(seg);
@@ -116,7 +123,7 @@ export function settings() {
     g.appendChild(r);
   }
   body.appendChild(g);
-  body.appendChild(el('<div class="foot">Новый проект пока заводится только на Mac — создавать ли их с телефона, решает Алексей (открытый вопрос 13).</div>'));
+  body.appendChild(el('<div class="foot">Новый проект пока заводится только на Mac — создавать ли их с телефона, пока нельзя.</div>'));
 
   return s;
 }
