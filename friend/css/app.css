@@ -198,6 +198,12 @@ button.row:active, .row.tap:active { background: var(--press); }
 .p-head { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-size: var(--t-sub); line-height: 1.3; }
 .p-head .p-date { font-weight: 600; color: var(--ink); }
 .p-head .p-tags { color: var(--accent); }
+
+.p-head .p-tags.t-bug { color: var(--red); }
+.p-head .p-tags.t-idea { color: var(--yellow); }
+:root[data-theme="light"] .p-head .p-tags.t-idea { color: #B88A00; }
+.p-head .p-tags.t-task { color: var(--blue); }
+.p-head .p-tags.t-question { color: var(--purple); }
 .p-head .p-tags:not(:empty)::before { content: "·"; color: var(--ink-3); margin-right: 8px; }
 .p-head .sd { width: 18px; height: 18px; }
 
@@ -257,14 +263,19 @@ button.row:active, .row.tap:active { background: var(--press); }
 
 
 .sd { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; flex: none; position: relative; }
-.sd-open { box-shadow: inset 0 0 0 1.6px var(--ink-3); }
-.sd-taken { box-shadow: inset 0 0 0 1.6px var(--st-taken); }
-.sd-taken::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--st-taken); }
-.sd-done_beta { background: var(--st-done); box-shadow: inset 0 0 0 1.6px var(--st-done); }
+.sd-open { box-shadow: inset 0 0 0 1.6px var(--sc, var(--ink-3)); }
+.sd-taken { box-shadow: inset 0 0 0 1.6px var(--sc, var(--st-taken)); }
+.sd-taken::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--sc, var(--st-taken)); }
+.sd-done_beta { background: var(--sc, var(--st-done)); box-shadow: inset 0 0 0 1.6px var(--sc, var(--st-done)); }
 .sd-done_beta::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #fff; }
-.sd-verified { background: var(--st-verified); color: #fff; }
+.sd-verified { background: var(--sc, var(--st-verified)); color: #fff; }
 .sd-verified .ic { width: 15px; height: 15px; stroke-width: 2.8; }
-.sd-reopened { box-shadow: inset 0 0 0 2px var(--st-reopened); }
+.sd-reopened { box-shadow: inset 0 0 0 2px var(--sc, var(--st-reopened)); }
+.sd.ty-bug { --sc: var(--red); }
+.sd.ty-idea { --sc: var(--yellow); }
+:root[data-theme="light"] .sd.ty-idea { --sc: #B88A00; }
+.sd.ty-task { --sc: var(--blue); }
+.sd.ty-question { --sc: var(--purple); }
 .sd-dropped { box-shadow: inset 0 0 0 1.6px var(--ink-4); }
 .sd-dropped i { width: 10px; border-top: 1.6px solid var(--ink-3); }
 
@@ -582,3 +593,15 @@ mark { background: color-mix(in srgb, var(--yellow) 45%, transparent); color: in
 .chip.urg.urgent { background: color-mix(in srgb, var(--orange) 22%, transparent); color: var(--orange); font-weight: 600; }
 button.chip.urg { display: inline-flex; align-items: center; gap: 6px; }
 .cap-chips .chip.urg .ic { width: 15px; height: 15px; }
+
+
+.tfilter { display: flex; gap: 6px; padding: 0 var(--pad) 8px; overflow-x: auto; scrollbar-width: none; }
+.tfilter::-webkit-scrollbar { display: none; }
+.tfilter button { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 5px 11px; border-radius: 14px; font-size: var(--t-foot); font-weight: 600; background: var(--fill-2); color: var(--ink-2); }
+.tfilter button .n { font-weight: 500; opacity: 0.7; }
+.tfilter button.on { background: var(--ink); color: var(--bg); }
+.tfilter button.type-bug.on { background: var(--red); color: #fff; }
+.tfilter button.type-idea.on { background: var(--yellow); color: #000; }
+:root[data-theme="light"] .tfilter button.type-idea.on { background: #B88A00; color: #fff; }
+.tfilter button.type-task.on { background: var(--blue); color: #fff; }
+.tfilter button.type-question.on { background: var(--purple); color: #fff; }

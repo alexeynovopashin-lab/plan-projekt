@@ -52,7 +52,7 @@ export function inbox() {
     const hint = suggest(e.text);
     const card = el(`<div class="ibox">
       <div class="i-text" data-open>${esc(e.text)}</div>
-      <div class="i-meta">${e.type ? `<span class="chip type-${e.type}">${typeTitle(e.type)}</span>` : ""}<span>${when(e.created)}</span>${e.source === "siri" ? "<span>· Сири</span>" : ""}${[...e.tags].map(t => `<span class="chip tag">${esc(t)}</span>`).join("")}</div>
+      <div class="i-meta">${e.type ? `<span class="chip type-${e.type}">${typeTitle(e.type)}</span>` : ""}<span>${when(e.created)}</span>${e.source === "siri" ? "<span>· Сири</span>" : ""}${[...e.tags].map(t => `<span class="chip tag ${e.type ? "type-" + e.type : ""}">${esc(t)}</span>`).join("")}</div>
       ${(e.attachments || []).map(a => `<img class="p-img" src="${blobUrl(a)}" alt="">`).join("")}
       ${hint ? `<button class="hint">${icon("lightbulb")}<span>Похоже на <b>${esc(project(hint).title)}</b> — нажмите, чтобы подтвердить</span></button>` : ""}
       <div class="i-proj">${order.map(p => `<button data-tag="${p.tag}"><span class="pico lg" style="--c:var(--${p.color || "gray"})">${icon(p.icon || "list.bullet")}</span><span class="t">${esc(p.title)}</span></button>`).join("")}</div>

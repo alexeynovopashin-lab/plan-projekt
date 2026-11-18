@@ -89,6 +89,7 @@ export function capture({ project: tag = null, type = null } = {}) {
     const t = TYPES.find(x => x.id === st.type);
     box.querySelector("[data-title]").textContent = t ? t.t : "Новая запись";
     box.querySelector(".cap-head .p-date").textContent = stamp(opened);
+    box.querySelector(".cap-head .p-tags").className = "p-tags" + (st.type ? " t-" + st.type : "");
     box.querySelector(".cap-head .p-tags").textContent = headTags(st.type, st.tags).map(x => "#" + x).join(" ");
     chips.innerHTML = (st.type === "idea" ? `<button class="chip urg ${st.urgency}" data-urg>${icon("lightbulb")} ${st.urgency === "urgent" ? "Срочная — обсудим" : "Отложенная — только в план"}</button>` : "") + (st.due ? `<span class="chip due">${icon("calendar")} ${st.due.split("-").reverse().join(".")}</span>` : "") +
       "";

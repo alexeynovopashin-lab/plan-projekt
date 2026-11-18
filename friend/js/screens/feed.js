@@ -49,7 +49,7 @@ export function paraHtml(e, { showProject = false } = {}) {
     <div class="sw-bg sw-left">${icon("trash")}<span>Отменить</span></div>
     <div class="sw-bg sw-right" style="background:var(--green)">${icon("checkmark")}<span>Проверено</span></div>
     <div class="sw-body">
-      <div class="p-head">${statusDot(e)}<span class="p-date">${stamp(e.created)}</span>${tags.length ? `<span class="p-tags">${tags.map(t => "#" + esc(t)).join(" ")}</span>` : ""}</div>
+      <div class="p-head">${statusDot(e)}<span class="p-date">${stamp(e.created)}</span>${tags.length ? `<span class="p-tags ${e.type ? "t-" + e.type : ""}">${tags.map(t => "#" + esc(t)).join(" ")}</span>` : ""}</div>
       <div class="p-text" data-open>${esc(e.text)}</div>
       ${meta ? `<div class="p-meta">${meta}</div>` : ""}
       ${imgs ? `<div class="p-imgs">${imgs}</div>` : ""}
@@ -100,6 +100,8 @@ export function renderParas(container, entries, opts) {
   }
 }
 
+const TYPE_PL = { task: "Задачи", question: "Вопросы", idea: "Идеи", bug: "Баги" };
+const typeFilter = tag => { const v = ls(key("tf." + tag)); return v === "none" || TYPES.some(t => t.id === v) ? v : ""; };
 const feedFilter = new Map();   
 
 export function feed(route) {
@@ -117,7 +119,14 @@ export function feed(route) {
     const seg = el(`<div class="seg">${FILTERS.map(f => `<button data-f="${f.id}" class="${f.id === fid ? "on" : ""}">${f.t}<span class="n">${mine.filter(f.f).length}</span></button>`).join("")}</div>`);
     body.appendChild(seg);
     seg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { feedFilter.set(p.tag, b.dataset.f); fill(); }));
-    const list = sorted(mine.filter(FILTERS.find(f => f.id === fid).f));
+    const byStatus = mine.filter(FILTERS.find(f => f.id === fid).f);
+    const tid = typeFilter(p.tag);
+    const tf = [["", "Все", byStatus.length], ...["task", "question", "idea", "bug"].map(id => [id, TYPE_PL[id], byStatus.filter(e => e.type === id).length]),
+      ...(byStatus.some(e => !e.type) ? [["none", "Без типа", byStatus.filter(e => !e.type).length]] : [])];
+    const tfRow = el(`<div class="tfilter">${tf.map(([id, t, n]) => `<button data-t="${id}" class="${id && id !== "none" ? "type-" + id : ""} ${id === tid ? "on" : ""}">${t}<span class="n">${n}</span></button>`).join("")}</div>`);
+    body.appendChild(tfRow);
+    tfRow.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { ls(key("tf." + p.tag), b.dataset.t); fill(); }));
+    const list = sorted(tid ? byStatus.filter(e => (tid === "none" ? !e.type : e.type === tid)) : byStatus);
     const bar = el('<div class="list-bar"></div>');
     bar.appendChild(el(`<span>${list.length} ${plural(list.length, "запись", "записи", "записей")}</span>`));
     bar.appendChild(sortButton(fill));

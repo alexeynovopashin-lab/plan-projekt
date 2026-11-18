@@ -53,10 +53,10 @@ export function projIcon(tag, size = "") {
 }
 
 export function statusDot(st) {
-  const s = st.status;
-  if (s === "verified") return `<span class="sd sd-verified">${icon("checkmark")}</span>`;
+  const s = st.status, t = st.type && s !== "dropped" ? ` ty-${st.type}` : "";   
+  if (s === "verified") return `<span class="sd sd-verified${t}">${icon("checkmark")}</span>`;
   if (s === "dropped") return `<span class="sd sd-dropped"><i></i></span>`;
-  return `<span class="sd sd-${s}"></span>`;
+  return `<span class="sd sd-${s}${t}"></span>`;
 }
 
 export function tick() { try { navigator.vibrate && navigator.vibrate(8); } catch {} }

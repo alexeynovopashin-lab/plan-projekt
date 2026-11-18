@@ -64,7 +64,7 @@ export function entry(route) {
   head.querySelector("[data-proj]").addEventListener("click", () => p ? nav.push({ s: "feed", tag: p.tag }) : nav.tab("inbox"));
   body.appendChild(head);
   const headT = headTags(e.type, [...e.tags]);
-  body.appendChild(el(`<div class="p-head entry-stamp"><span class="p-date">${stamp(e.created)}</span>${headT.length ? `<span class="p-tags">${headT.map(t => "#" + esc(t)).join(" ")}</span>` : ""}</div>`));
+  body.appendChild(el(`<div class="p-head entry-stamp"><span class="p-date">${stamp(e.created)}</span>${headT.length ? `<span class="p-tags ${e.type ? "t-" + e.type : ""}">${headT.map(t => "#" + esc(t)).join(" ")}</span>` : ""}</div>`));
   const ta = el(`<textarea class="entry-text entry-edit" rows="1" enterkeyhint="enter" aria-label="Текст записи"></textarea>`);
   ta.value = e.text;
   autogrow(ta, 100000);
