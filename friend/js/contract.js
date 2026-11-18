@@ -30,6 +30,7 @@ export function ymPath(id) {
 export const entryPath = id => "entries/" + ymPath(id) + "/" + id + ".md";
 export const eventPath = id => "events/" + ymPath(id) + "/" + id + ".json";
 export const attachPath = (id, n) => "attachments/" + ymPath(id) + "/" + id + "-" + n + ".jpg";
+export const editPath = (id, n, k) => "attachments/" + ymPath(id) + "/" + id + "-" + n + "-edit" + k + ".jpg";
 
 const ORDER = ["id", "created", "source", "device", "project", "type", "urgency", "parsed_by"];
 
@@ -114,7 +115,7 @@ export function foldEntry(entry, events) {
   const s = {
     ...entry, status: "open", statusAt: entry.created, commit: null, channel: null,
     questions: [], comments: [], tags: new Set(), links: [], start: null, due: null,
-    history: [], doneAt: null
+    history: [], doneAt: null, edits: {}
   };
   const evs = events.slice().sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : a.id < b.id ? -1 : 1));
   for (const ev of evs) {
@@ -145,11 +146,13 @@ export function foldEntry(entry, events) {
         if ("type" in ev) s.type = ev.type || null;
         if ("urgency" in ev) s.urgency = ev.urgency || null;
         break;
+      case "image": if (ev.original && ev.path) (s.edits[ev.original] ||= []).push(ev.path); break;
       case "comment": s.comments.push({ text: ev.text, at: ev.at, by: ev.by }); break;
       case "text": s.text = ev.text; s.editedAt = ev.at; break;
     }
   }
   s.urgency = s.type === "idea" ? (s.urgency === "urgent" ? "urgent" : "deferred") : null;
+  s.shown = (s.attachments || []).map(a => (s.edits[a] || []).slice(-1)[0] || a);
   s.openQuestion = s.questions.find(q => !q.answer) || null;
   s.waits = s.status === "done_beta" || !!s.openQuestion;
   s.closed = s.status === "verified" || s.status === "dropped";

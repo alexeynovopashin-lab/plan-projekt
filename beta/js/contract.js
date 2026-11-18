@@ -34,6 +34,8 @@ export function ymPath(id) {
 export const entryPath = id => "entries/" + ymPath(id) + "/" + id + ".md";
 export const eventPath = id => "events/" + ymPath(id) + "/" + id + ".json";
 export const attachPath = (id, n) => "attachments/" + ymPath(id) + "/" + id + "-" + n + ".jpg";
+// An edited picture (crop / drawing) is a NEW file next to the original: <id>-<n>-edit<k>.jpg (Alexey, 18.11).
+export const editPath = (id, n, k) => "attachments/" + ymPath(id) + "/" + id + "-" + n + "-edit" + k + ".jpg";
 
 // ---- entry Markdown ----
 const ORDER = ["id", "created", "source", "device", "project", "type", "urgency", "parsed_by"];
@@ -121,7 +123,7 @@ export function foldEntry(entry, events) {
   const s = {
     ...entry, status: "open", statusAt: entry.created, commit: null, channel: null,
     questions: [], comments: [], tags: new Set(), links: [], start: null, due: null,
-    history: [], doneAt: null
+    history: [], doneAt: null, edits: {}
   };
   const evs = events.slice().sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : a.id < b.id ? -1 : 1));
   for (const ev of evs) {
@@ -152,6 +154,8 @@ export function foldEntry(entry, events) {
         if ("type" in ev) s.type = ev.type || null;
         if ("urgency" in ev) s.urgency = ev.urgency || null;
         break;
+      // A new JPEG made from a picture of the entry: `original` is the attachment, `path` the edited file.
+      case "image": if (ev.original && ev.path) (s.edits[ev.original] ||= []).push(ev.path); break;
       case "comment": s.comments.push({ text: ev.text, at: ev.at, by: ev.by }); break;
       // Alexey, 17.11: «нажал на поле текста и сразу могу менять, как в обычном блокноте».
       // The entry file stays as written; the latest text event is the text.
@@ -160,6 +164,8 @@ export function foldEntry(entry, events) {
   }
   // Urgency matters for ideas only; an idea without it (every entry made before 18.11) is deferred.
   s.urgency = s.type === "idea" ? (s.urgency === "urgent" ? "urgent" : "deferred") : null;
+  // What to show: the newest edit of each picture, else the original; `shown[i]` belongs to `attachments[i]`.
+  s.shown = (s.attachments || []).map(a => (s.edits[a] || []).slice(-1)[0] || a);
   s.openQuestion = s.questions.find(q => !q.answer) || null;
   s.waits = s.status === "done_beta" || !!s.openQuestion;
   s.closed = s.status === "verified" || s.status === "dropped";

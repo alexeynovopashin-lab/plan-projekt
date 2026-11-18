@@ -1,4 +1,5 @@
-import { state, project, blobUrl, addEvent } from "../store.js";
+import { state, project, blobUrl, addEvent, saveEdit } from "../store.js";
+import { editImage } from "./imgedit.js";
 import { typeTitle, STATUS_TITLE, urgencyTitle } from "../contract.js";
 import { el, esc, when, statusDot, viewImage, projIcon, autogrow, toast, dateLong, stamp, headTags } from "../ui.js";
 import { icon } from "../icons.js";
@@ -31,6 +32,7 @@ function histRow(ev) {
       const to = state.entries.get(ev.to);
       t = REL[ev.rel] || "Связь"; sub = to ? "«" + esc(to.text.slice(0, 60)) + "»" : esc(ev.to); glyph = "link"; break;
     }
+    case "image": t = "Картинка изменена"; sub = "оригинал сохранён рядом"; glyph = "pencil"; break;
     case "dates": t = [("due" in ev) && (ev.due ? "Срок: " + dateLong(ev.due) : "Срок убран"), ("start" in ev) && ev.start && "Начать: " + dateLong(ev.start)].filter(Boolean).join(" · "); glyph = "calendar"; break;
     case "classify": t = [("project" in ev) && ("Проект: " + esc(project(ev.project)?.title || "Входящие")), ("type" in ev) && ("Тип: " + (typeTitle(ev.type) || "без типа")), ("urgency" in ev) && ("Срочность: " + (urgencyTitle(ev.urgency) || "не задана"))].filter(Boolean).join(" · "); glyph = "folder"; break;
     case "comment": t = "Заметка агента"; sub = esc(ev.text); glyph = "bubble"; break;
@@ -83,11 +85,20 @@ export function entry(route) {
 
   if (e.attachments?.length) {
     const im = el('<div class="entry-imgs"></div>');
-    for (const a of e.attachments) {
-      const i = document.createElement("img"); i.src = blobUrl(a); i.alt = "";
+    e.attachments.forEach((a, n) => {
+      const shown = e.shown[n], edited = shown !== a;
+      const box = el(`<div class="pic-edit"><img alt=""><button class="pe">${icon("pencil")}Изменить</button>${edited ? '<button class="po">Оригинал</button>' : ""}</div>`);
+      const i = box.querySelector("img"); i.src = blobUrl(shown);
       i.addEventListener("click", () => viewImage(i.src));
-      im.appendChild(i);
-    }
+      box.querySelector(".po")?.addEventListener("click", () => viewImage(blobUrl(a)));
+      box.querySelector(".pe").addEventListener("click", async () => {
+        const out = await editImage(state.blobs.get(shown));
+        if (!out) return;
+        await saveEdit(e.id, a, shown, out);
+        toast(edited ? "Новая правка сохранена" : "Картинка с пометками сохранена, оригинал цел");
+      });
+      im.appendChild(box);
+    });
     body.appendChild(im);
   }
 

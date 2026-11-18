@@ -39,7 +39,7 @@ export function paraHtml(e, { showProject = false } = {}) {
   const stChip = st === "done_beta" ? `<span class="chip st-done_beta">сделано в бете${e.commit ? ` · <span class="mono">${esc(e.commit.slice(0, 7))}</span>` : ""}</span>`
     : st === "reopened" ? `<span class="chip st-reopened">открыта снова</span>`
       : st === "taken" ? `<span class="chip st-taken">взята агентом</span>` : "";
-  const imgs = (e.attachments || []).map(p => `<img class="p-img" src="${blobUrl(p)}" alt="" data-src="${esc(p)}">`).join("");
+  const imgs = (e.shown || e.attachments || []).map(p => `<img class="p-img" src="${blobUrl(p)}" alt="" data-src="${esc(p)}">`).join("");
   const q = e.openQuestion;
   const lastComment = e.comments.length ? e.comments[e.comments.length - 1] : null;
   const tags = headTags(e.type, [...e.tags]);

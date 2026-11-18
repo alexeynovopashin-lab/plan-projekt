@@ -1,9 +1,9 @@
 // Offline shell. Bump VERSION on every beta change so the phone takes the new files.
-const VERSION = "pp-beta-14";
+const VERSION = "pp-beta-15";
 const FILES = [
   "./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png",
   "css/tokens.css", "css/app.css",
-  "js/app.js", "js/nav.js", "js/ui.js", "js/icons.js", "js/store.js", "js/contract.js", "js/actions.js", "js/samples.js", "js/zip.js", "js/sync.js", "js/registry_seed.js", "js/flavor.js", "js/screens/setup.js",
+  "js/app.js", "js/nav.js", "js/ui.js", "js/icons.js", "js/store.js", "js/contract.js", "js/actions.js", "js/samples.js", "js/zip.js", "js/sync.js", "js/registry_seed.js", "js/flavor.js", "js/screens/setup.js", "js/screens/imgedit.js",
   "js/screens/home.js", "js/screens/feed.js", "js/screens/capture.js", "js/screens/entry.js", "js/screens/inbox.js",
   "js/screens/timeline.js", "js/screens/calendar.js", "js/screens/search.js", "js/screens/settings.js"
 ];

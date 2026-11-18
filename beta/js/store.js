@@ -1,7 +1,7 @@
 // Local store: IndexedDB holds the same files as the entries repo
 // (docs/architecture.md §7). Create-only, except projects.yml.
 import {
-  newId, localStamp, entryPath, eventPath, attachPath, entryToMd, mdToEntry,
+  newId, localStamp, entryPath, eventPath, attachPath, editPath, entryToMd, mdToEntry,
   registryToYml, ymlToRegistry, foldEntry
 } from "./contract.js";
 import { FLAVOR } from "./flavor.js";
@@ -113,6 +113,18 @@ export async function createEntry({ text, project, type, urgency, images = [], s
   state.rawEntries.set(id, mdToEntry(entryToMd(e)));
   if (!silent) { refold(); emit(); }
   return id;
+}
+
+// Save an edited picture: a new JPEG next to the original plus an `image` event; nothing is overwritten.
+export async function saveEdit(entryId, original, from, blob) {
+  const e = state.entries.get(entryId);
+  const n = e.attachments.indexOf(original) + 1;
+  const k = (e.edits[original] || []).length + 1;
+  const path = editPath(entryId, n, k);
+  await putFile(path, blob);
+  state.blobs.set(path, blob);
+  await addEvent({ entry: entryId, kind: "image", original, from, path });
+  return path;
 }
 
 export function blobUrl(path) {

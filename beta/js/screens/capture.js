@@ -1,6 +1,7 @@
 // Capture sheet «+» (docs/screens.md §2.3), after «Новое напоминание» (refs/11, refs/12).
 import { createEntry, addEvent, project, allEntries, done, state, actualProjects } from "../store.js";
 import { TYPES } from "../contract.js";
+import { editImage } from "./imgedit.js";
 import { el, esc, openSheet, toJpeg, projIcon, toast, stamp, headTags } from "../ui.js";
 import { icon } from "../icons.js";
 import { pickProject } from "../actions.js";
@@ -157,11 +158,18 @@ export function capture({ project: tag = null, type = null } = {}) {
   });
   box.querySelector(".accessory input[type=file]").addEventListener("change", async e => {
     for (const f of e.target.files) {
-      const j = await toJpeg(f);
+      let j = await toJpeg(f);
       st.files.push(j);
-      const th = el(`<div class="th"><img alt=""><button class="x" aria-label="Убрать">${icon("xmark")}</button></div>`);
+      const th = el(`<div class="th"><img alt=""><button class="ed" aria-label="Обрезать или рисовать">${icon("pencil")}</button><button class="x" aria-label="Убрать">${icon("xmark")}</button></div>`);
       th.querySelector("img").src = URL.createObjectURL(j);
       th.querySelector(".x").addEventListener("click", () => { st.files.splice(st.files.indexOf(j), 1); th.remove(); valid(); });
+      // Not saved yet, so the edit simply replaces the draft picture.
+      th.querySelector(".ed").addEventListener("click", async () => {
+        const out = await editImage(j);
+        if (!out) return;
+        st.files[st.files.indexOf(j)] = j = out;
+        th.querySelector("img").src = URL.createObjectURL(out);
+      });
       thumbs.appendChild(th);
     }
     e.target.value = ""; valid();
